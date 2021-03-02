@@ -1,7 +1,9 @@
 (ns dgknght.app-lib-test
-  (:require [clojure.test :refer :all]
-            [dgknght.app-lib :refer :all]))
+  (:require [clojure.test :refer [deftest is]]
+            [dgknght.app-lib :as lib]))
 
-(deftest a-test
-  (testing "FIXME, I fail."
-    (is (= 0 1))))
+(deftest parse-an-integer
+  (is (= 1 (lib/parse-int "1")))
+  (is (nil? (lib/parse-int nil)))
+  (is (thrown? NumberFormatException
+               (lib/parse-int "notanumber"))))
