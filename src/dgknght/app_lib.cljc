@@ -1,4 +1,5 @@
 (ns dgknght.app-lib
+  (:refer-clojure :exclude [uuid])
   (:require #?(:clj [clojure.pprint :refer [pprint]]))
   #?(:clj (:import java.lang.Integer
                    java.util.UUID)))
@@ -59,10 +60,15 @@
     (map? data)  (dissoc data k)
     :else data))
 
-#?(:clj
-   (defn uuid
-     ([] (UUID/randomUUID))
-     ([value]
-      (if (instance? UUID value)
-        value
-        (UUID/fromString (str value))))))
+#?(:clj (defn uuid
+          ([] (UUID/randomUUID))
+          ([value]
+           (when value
+             (if (instance? UUID value)
+               value
+               (UUID/fromString (str value))))))
+      :cljs (defn uuid
+              ([] (random-uuid))
+              ([value]
+               (when value
+                 (uuid value)))))
