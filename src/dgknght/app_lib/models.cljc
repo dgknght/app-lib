@@ -1,21 +1,35 @@
 (ns dgknght.app-lib.models)
 
 (defn- append-children
-  [item id-fn grouped-items]
+  [item grouped-items {:keys [id-fn
+                              decorate-fn]
+                       :or {decorate-fn identity}
+                       :as opts}]
   (if-let [children (get-in grouped-items [(id-fn item)])]
-    (assoc item :children (map #(append-children % id-fn grouped-items)
-                               children))
+    (decorate-fn
+      (assoc item
+             :children
+             (map #(append-children % grouped-items opts)
+                  children)))
     item))
 
 (defn nest
   "Given a collection of maps with recursive references, returns the same list with
-  children assigned to their parents"
-  ([collection] (nest :id :parent-id collection))
-  ([id-fn parent-fn collection]
+  children assigned to their parents.
+  
+  options:
+    :id-fn       - A key or fn that extracts the id from each model. Defaults to :id.
+    :parent-fn   - A key or fn that extracts the parent id from each model. Defaults to :parent-id.
+    :decorate-fn - A function that receives each model that has children with the model as the first argument and the children as the second and returns the model."
+  ([collection] (nest {} collection))
+  ([{:keys [parent-fn]
+     :or {parent-fn :parent-id}
+     :as opts}
+    collection]
    (let [grouped (group-by parent-fn collection)]
      (->> collection
           (remove parent-fn)
-          (map #(append-children % id-fn grouped))))))
+          (map #(append-children % grouped opts))))))
 
 (defn- unnest-item
   [item {:keys [id-fn
