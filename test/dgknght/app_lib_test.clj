@@ -3,6 +3,16 @@
             [dgknght.app-lib :as lib])
   (:import java.util.UUID))
 
+(deftest parse-a-boolean
+  (is (lib/parse-bool "true"))
+  (is (lib/parse-bool "True"))
+  (is (lib/parse-bool "TRUE"))
+  (is (lib/parse-bool "1"))
+  (is (not (lib/parse-bool "false")))
+  (is (not (lib/parse-bool "False")))
+  (is (not (lib/parse-bool "FALSE")))
+  (is (not (lib/parse-bool "0"))))
+
 (deftest parse-an-integer
   (is (= 1 (lib/parse-int "1")))
   (is (nil? (lib/parse-int nil)))
@@ -20,6 +30,12 @@
                            [:value]
                            inc))
       "The map is not modified if the key is not present"))
+
+(deftest conditionally-assoc-in
+  (is (= {:value 1}
+         (lib/assoc-if {} :value 1)))
+  (is (= {}
+         (lib/assoc-if {} :value nil))))
 
 (deftest test-for-deeply-contained-key
   (is (lib/deep-contains? {:one 1} :one))

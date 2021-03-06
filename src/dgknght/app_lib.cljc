@@ -1,6 +1,7 @@
 (ns dgknght.app-lib
   (:refer-clojure :exclude [uuid])
-  (:require #?(:clj [clojure.pprint :refer [pprint]]))
+  (:require [clojure.string :as string]
+            #?(:clj [clojure.pprint :refer [pprint]]))
   #?(:clj (:import java.lang.Integer
                    java.util.UUID)))
 
@@ -9,12 +10,26 @@
   #?(:clj (pprint msg)
      :cljs (.log js/console (prn-str msg))))
 
+(def boolean-values #{"true" "1" "y" "yes" "t"})
+
+(defn parse-bool
+  [value]
+  (when value
+    (contains? boolean-values (string/lower-case value))))
+
 (defn parse-int
   "Attempts to parse and return any non-nil value as an integer"
   [v]
   (when v
     #?(:clj (Integer/parseInt v)
        :cljs (js/parseInt v))))
+
+(defn assoc-if
+  "Performs an assoc if the specified value is not nil."
+  [m k v]
+  (if v
+    (assoc m k v)
+    m))
 
 (defn update-in-if
   "Performs an update-in if the key already exists in the map."
