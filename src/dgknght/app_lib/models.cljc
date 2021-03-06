@@ -10,11 +10,12 @@
 (defn nest
   "Given a collection of maps with recursive references, returns the same list with
   children assigned to their parents"
-  [id-fn parent-fn collection]
-  (let [grouped (group-by parent-fn collection)]
-    (->> collection
-         (remove parent-fn)
-         (map #(append-children % id-fn grouped)))))
+  ([collection] (nest :id :parent-id collection))
+  ([id-fn parent-fn collection]
+   (let [grouped (group-by parent-fn collection)]
+     (->> collection
+          (remove parent-fn)
+          (map #(append-children % id-fn grouped))))))
 
 (defn- unnest-item
   [item {:keys [id-fn
@@ -40,6 +41,9 @@
 
 (defn unnest
   "Given a nested collection, return a flattened list"
-  [options collection]
-  (mapcat #(unnest-item % options)
-          collection))
+  ([collection] (unnest {} collection))
+  ([options collection]
+   (mapcat #(unnest-item % (merge {:id-fn :id
+                                   :path-segment-fn :name}
+                                  options))
+           collection)))
