@@ -3,7 +3,8 @@
 (defn- append-children
   [item grouped-items {:keys [id-fn
                               decorate-fn]
-                       :or {decorate-fn identity}
+                       :or {decorate-fn identity
+                            id-fn :id}
                        :as opts}]
   (if-let [children (get-in grouped-items [(id-fn item)])]
     (decorate-fn
@@ -29,7 +30,7 @@
    (let [grouped (group-by parent-fn collection)]
      (->> collection
           (remove parent-fn)
-          (map #(append-children % grouped opts))))))
+          (mapv #(append-children % grouped opts))))))
 
 (defn- unnest-item
   [item {:keys [id-fn
