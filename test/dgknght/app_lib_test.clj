@@ -16,8 +16,24 @@
 (deftest parse-an-integer
   (is (= 1 (lib/parse-int "1")))
   (is (nil? (lib/parse-int nil)))
+  (is (nil? (lib/parse-int ""))
+      "An empty string yeilds nil")
+  (is (= 1000 (lib/parse-int "1,000"))
+      "A formatted interger is parsed correctly")
+  (is (= 123 (lib/parse-int 123))
+      "An integer is returned as-is")
   (is (thrown? NumberFormatException
                (lib/parse-int "notanumber"))))
+
+(deftest parse-a-floating-point-number
+  (is (= 1.0 (lib/parse-float "1")))
+  (is (= 1.23 (lib/parse-float "1.23")))
+  (is (nil? (lib/parse-float nil))
+      "Nil yield nil")
+  (is (nil? (lib/parse-float ""))
+      "An empty string returns nil")
+  (is (= 1.23 (lib/parse-float 1.23))
+      "A float is returned as-is"))
 
 (deftest conditionally-update-in
   (is (= {:value 2}
@@ -62,3 +78,7 @@
         "A UUID is returned as-is")
     (is (instance? UUID (lib/uuid))
         "With no args, a new UUID is returned")))
+
+(deftest get-a-model-id
+  (is (= 42 (lib/->id 42)))
+  (is (= 42 (lib/->id {:id 42}))))

@@ -2,8 +2,7 @@
   (:refer-clojure :exclude [uuid])
   (:require [clojure.string :as string]
             #?(:clj [clojure.pprint :refer [pprint]]))
-  #?(:clj (:import java.lang.Integer
-                   java.util.UUID)))
+  #?(:clj (:import java.util.UUID)))
 
 (defn trace
   [msg]
@@ -17,12 +16,27 @@
   (when value
     (contains? boolean-values (string/lower-case value))))
 
-(defn parse-int
-  "Attempts to parse and return any non-nil value as an integer"
+(defn- parse-int*
   [v]
-  (when v
-    #?(:clj (Integer/parseInt v)
-       :cljs (js/parseInt v))))
+  #?(:clj (Integer/parseInt v)
+         :cljs (js/parseInt v)))
+
+(def parse-int
+  (some-fn #(when (integer? %) %)
+           #(when (and (string? %)
+                       (seq %))
+              (parse-int* (string/replace % #"," ""))))) ; TODO: this is specific to US number formatting rules
+
+(defn- parse-float*
+  [v]
+  #?(:clj (Double/parseDouble v)
+     :cljs (js/parseFloat v)))
+
+(def parse-float
+  (some-fn #(when (float? %) %)
+           #(when (and (string? %)
+                       (seq %))
+              (parse-float* %))))
 
 (defn assoc-if
   "Performs an assoc if the specified value is not nil."
@@ -87,3 +101,8 @@
               ([value]
                (when value
                  (uuid value)))))
+
+(defn ->id
+  "Given a model with the id is stored at :id, or the id iteself, return the id"
+  [model-or-id]
+  (or (:id model-or-id) model-or-id))
