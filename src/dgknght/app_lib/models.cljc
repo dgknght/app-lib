@@ -1,5 +1,26 @@
 (ns dgknght.app-lib.models)
 
+(defn ->id
+  "Given a model with the id is stored at :id, or the id iteself, return the id.
+  
+  E.g.:
+  (->id 123) => 123
+  (->id {:id 456 :name \"John\"}) => 456"
+  [model-or-id]
+  (or (:id model-or-id) model-or-id))
+
+(defn map-index
+  "Given a sequence of maps and a key function, returns a map of the
+  values in the collection where the keys are the values retrieved by the key function.
+
+  E.g.:
+  (index :id [{:id 1 :name \"One\"}]) => {1 {:id 1 :name \"One\"}}"
+  ([values] (map-index :id values))
+  ([key-fn values]
+   (->> values
+        (map (juxt key-fn identity))
+        (into {}))))
+
 (defn- append-children
   [item grouped-items {:keys [id-fn
                               decorate-fn]

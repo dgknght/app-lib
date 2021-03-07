@@ -2,6 +2,22 @@
   (:require [clojure.test :refer [deftest is]]
             [dgknght.app-lib.models :as models]))
 
+(deftest get-a-model-id
+  (is (= 42 (models/->id 42)))
+  (is (= 42 (models/->id {:id 42}))))
+
+(deftest create-an-index-map
+  (let [records [{:id 1 :name "One"}
+                 {:id 2 :name "Two"}]]
+    (is (= {1 {:id 1 :name "One"}
+            2 {:id 2 :name "Two"}}
+           (models/map-index records))
+        "The default key-fn is :id")
+    (is (= {"One" {:id 1 :name "One"}
+            "Two" {:id 2 :name "Two"}}
+           (models/map-index :name records))
+        "The key-fn can be specified")))
+
 (def ^:private flat-list
   [{:id 1
     :name "Group 1"}

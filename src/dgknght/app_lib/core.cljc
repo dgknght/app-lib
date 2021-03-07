@@ -101,8 +101,3 @@
               ([value]
                (when value
                  (uuid value)))))
-
-(defn ->id
-  "Given a model with the id is stored at :id, or the id iteself, return the id"
-  [model-or-id]
-  (or (:id model-or-id) model-or-id))

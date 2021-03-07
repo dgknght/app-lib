@@ -78,7 +78,3 @@
         "A UUID is returned as-is")
     (is (instance? UUID (lib/uuid))
         "With no args, a new UUID is returned")))
-
-(deftest get-a-model-id
-  (is (= 42 (lib/->id 42)))
-  (is (= 42 (lib/->id {:id 42}))))
