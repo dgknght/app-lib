@@ -1,4 +1,4 @@
-(ns dgknght.app-lib
+(ns dgknght.app-lib.core
   (:refer-clojure :exclude [uuid])
   (:require [clojure.string :as string]
             #?(:clj [clojure.pprint :refer [pprint]]))

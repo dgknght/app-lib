@@ -1,6 +1,6 @@
-(ns dgknght.app-lib-test
+(ns dgknght.app-lib.core-test
   (:require [clojure.test :refer [deftest is]]
-            [dgknght.app-lib :as lib])
+            [dgknght.app-lib.core :as lib])
   (:import java.util.UUID))
 
 (deftest parse-a-boolean
