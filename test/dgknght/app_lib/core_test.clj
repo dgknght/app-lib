@@ -1,5 +1,5 @@
 (ns dgknght.app-lib.core-test
-  (:require [clojure.test :refer [deftest is]]
+  (:require [clojure.test :refer [deftest is are testing]]
             [dgknght.app-lib.core :as lib])
   (:import java.util.UUID))
 
@@ -34,6 +34,14 @@
       "An empty string returns nil")
   (is (= 1.23 (lib/parse-float 1.23))
       "A float is returned as-is"))
+
+(deftest parse-a-decimal
+  (are [in e] (= e (lib/parse-decimal in))
+       "10"         10M
+       "10.1"       10.1M
+       "-10.1"       -10.1M
+       ""           nil
+       "notanumber" nil))
 
 (deftest conditionally-update-in
   (is (= {:value 2}
@@ -78,3 +86,87 @@
         "A UUID is returned as-is")
     (is (instance? UUID (lib/uuid))
         "With no args, a new UUID is returned")))
+
+(deftest identify-presence-of-a-value
+  (is (not (lib/present? nil)))
+  (is (not (lib/present? "")))
+  (is (not (lib/present? [])))
+  (is (not (lib/present? {})))
+  (is (not (lib/present? #{})))
+  (is (not (lib/present? '())))
+  (is (lib/present? "1"))
+  (is (lib/present? 1))
+  (is (lib/present? [1]))
+  (is (lib/present? #{1}))
+  (is (lib/present? '(1)))
+  (is (lib/present? {:one 1})))
+
+(deftest ensure-a-string-value
+  (is (= "test" (lib/ensure-string "test")))
+  (is (= "test" (lib/ensure-string :test)))
+  (is (= "1" (lib/ensure-string 1))))
+
+(deftest index-a-collection
+  (let [coll [{:id 1 :name "One"}
+              {:id 2 :name "Two"}]
+        indexed (lib/index-by :id coll)]
+    (is (= {:id 1 :name "One"}
+           (get-in indexed [1])))))
+
+(deftest prune-data-structures
+  (testing "prune a simple map"
+    (is (= {:one 1
+            :two 2
+            :list [:one]}
+           (lib/prune-to {:one 1
+                          :two 2
+                          :three 3
+                          :list [:one]}
+                         {:one "one"
+                          :two "two"
+                          :list ["one"]}))
+        "The keys that match the target are included"))
+  (testing "prune a list of simple maps"
+    (is (= [{:one 1}
+            {:one 10
+             :two 20}]
+           (lib/prune-to [{:one 1
+                           :three 3}
+                          {:one 10
+                           :two 20
+                           :three 30}]
+                         [{:one "one"}
+                          {:one "ten"
+                           :two "twenty"}]))))
+  (testing "prune a map that contains sequences"
+    (is (= {:maps [{:one 1}
+                   {:one 10
+                    :two 20}]}
+           (lib/prune-to {:maps [{:one 1
+                                  :three 3}
+                                 {:one 10
+                                  :two 20
+                                  :three 30}]}
+                         {:maps [{:one "one"}
+                                 {:one "ten"
+                                  :two "twenty"}]}))
+        "The contained sequence is pruned correctly")))
+
+(deftest safely-extract-from-list-at-position
+  (is (= :one (lib/safe-nth [:zero :one] 1)))
+  (is (nil? (lib/safe-nth [:zero :one] 2))))
+
+(deftest build-a-string
+  (is (= "xxx" (lib/mkstr "x" 3))))
+
+(deftest conj-to-last-in-list
+  (is (= '((:new 1 2) (3 4))
+         (lib/conj-to-last '((1 2) (3 4))
+                           :new))))
+
+(deftest ensure-a-value-is-a-collection
+  (is (= {:one [1 2]}
+         (update-in {:one 1}
+                    [:one]
+                    (lib/fscalar (fnil conj []))
+                    2))))

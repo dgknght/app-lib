@@ -4,7 +4,8 @@
 
 (deftest get-a-model-id
   (is (= 42 (models/->id 42)))
-  (is (= 42 (models/->id {:id 42}))))
+  (is (= 42 (models/->id {:id 42})))
+  (is (thrown? clojure.lang.ExceptionInfo #"Model has no :id" (models/->id {:name "John Doe"}))))
 
 (deftest create-an-index-map
   (let [records [{:id 1 :name "One"}
@@ -112,13 +113,13 @@
   (is (= nested-list
          (models/nest {:id-fn :id
                        :parent-fn :parent
-                       :decorate-fn (fn [group]
-                                      (assoc group
-                                             :children-value
-                                             (->> (:children group)
-                                                  (mapcat (juxt :value :children-value))
-                                                  (filter identity)
-                                                  (reduce +))))}
+                       :decorate-parent-fn (fn [group]
+                                             (assoc group
+                                                    :children-value
+                                                    (->> (:children group)
+                                                         (mapcat (juxt :value :children-value))
+                                                         (filter identity)
+                                                         (reduce +))))}
                       flat-list))
       "The children are moved to the correct parent"))
 

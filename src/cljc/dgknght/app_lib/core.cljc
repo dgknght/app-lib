@@ -1,7 +1,10 @@
 (ns dgknght.app-lib.core
-  (:refer-clojure :exclude [uuid])
+  (:refer-clojure :exclude [uuid decimal?])
   (:require [clojure.string :as string]
-            #?(:clj [clojure.pprint :refer [pprint]]))
+            [clojure.walk]
+            #?(:clj [clojure.core :as cc])
+            #?(:clj [clojure.pprint :refer [pprint]])
+            #?(:cljs [dgknght.app-lib.decimal :as d]))
   #?(:clj (:import java.util.UUID)))
 
 (defn trace
@@ -10,6 +13,12 @@
      :cljs (.log js/console (prn-str msg))))
 
 (def boolean-values #{"true" "1" "y" "yes" "t"})
+
+(defn ensure-string
+  [v]
+  (if (keyword? v)
+    (name v)
+    (str v)))
 
 (defn parse-bool
   [value]
@@ -37,6 +46,18 @@
            #(when (and (string? %)
                        (seq %))
               (parse-float* %))))
+
+(defn- decimal?
+  [v]
+  #?(:clj (cc/decimal? v)
+     :cljs (d/decimal? v)))
+
+(def parse-decimal
+  (some-fn #(when (decimal? %) %)
+           #(when (and (string? %)
+                       (re-find #"^-?\d+(?:\.\d+)?$" %))
+              #?(:clj (bigdec %)
+                 :cljs (d/->decimal %)))))
 
 (defn assoc-if
   "Performs an assoc if the specified value is not nil."
@@ -101,3 +122,81 @@
               ([value]
                (when value
                  (uuid value)))))
+
+(defn present?
+  [v]
+  (boolean
+    (if (or (string? v)
+            (coll? v))
+      (seq v)
+      v)))
+
+(defn index-by
+  [key-fn coll]
+  (->> coll
+       (map (juxt key-fn identity))
+       (into {})))
+
+(declare prune-map)
+
+(defmulti prune-to
+  (fn [_target source]
+    (cond
+      (map? source) :map
+      (and (sequential? source)
+           (map? (first source))) :sequence)))
+
+(defmethod prune-to :map
+  [target source]
+  (prune-map target source (keys source)))
+
+(defmethod prune-to :sequence
+  [target source]
+  (let [ks (set (mapcat keys source))]
+    (map-indexed #(prune-map %2 (nth source %1) ks)
+         target)))
+
+(defmethod prune-to :default
+  [target _source]
+  target)
+
+(defn- prune-map
+  [target source ks]
+  (->> (select-keys target ks)
+       (map (fn [[k v]]
+              [k (prune-to v (get-in source [k]))]))
+       (into {})))
+
+(defn safe-nth
+  [col index]
+  (when (> (count col) index)
+    (nth col index)))
+
+(defn mkstr
+  "Creates a new string be repeating the specifed
+  based the specified number of times"
+  [base length]
+  (->> (repeat base)
+       (take length)
+       (string/join "")))
+
+(defn conj-to-last
+  "Given a list of lists, conjs the value x onto the last (as identified by the fn pop) inner list of the outer list"
+  [lists x]
+  (conj (pop lists)
+        (conj (peek lists) x)))
+
+(defn- ->coll
+  [x]
+  (if (coll? x) x [x]))
+
+(defn fscalar
+  "Given a function that expects a collection as the first argument, returns a
+  function that, if passed something that isn't a collection, creates a new
+  collection, adds the first arg to it, then applies the function"
+  [f]
+  (fn
+    ([x] (f (->coll x)))
+    ([x a] (f (->coll x) a))
+    ([x a b] (f (->coll x) a b))
+    ([x a b & cs] (apply f (->coll x) a b cs))))
