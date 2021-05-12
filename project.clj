@@ -34,4 +34,5 @@
                                    :optimizations :none}}]}
   :doo {:build "test"
         :alias {:default [:firefox]}}
-  :prep-tasks ["compile" ["cljsbuild" "once"]])
+  :prep-tasks ["compile" ["cljsbuild" "once"]]
+  :repositories [["clojars" {:creds :gpg}]])
