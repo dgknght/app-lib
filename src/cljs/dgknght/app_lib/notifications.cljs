@@ -59,7 +59,7 @@
   [{:keys [expires-at]}]
   (t/after? (t/now) expires-at))
 
-(defn- sweep-toasts
+(defn sweep-toasts
   ([]
    (swap! toasts sweep-toasts))
   ([toasts]

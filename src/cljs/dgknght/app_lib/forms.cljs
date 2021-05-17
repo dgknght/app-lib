@@ -6,6 +6,8 @@
             [cljs-time.core :as t]
             [cljs-time.format :as tf]
             [dgknght.app-lib.core :as lib]
+            [dgknght.app-lib.web :refer [format-time
+                                         unformat-time]]
             [dgknght.app-lib.math :as math]
             [dgknght.app-lib.inflection :refer [humanize]]
             [dgknght.app-lib.html :as html]
@@ -87,6 +89,10 @@
                                 :field field})))
   elem)
 
+(defn- input-class
+  [model field]
+  (get-in model [::input-classes field]))
+
 (defn checkbox-input
   ([model field] (checkbox-input model field {}))
   ([model field {:keys [on-change html]
@@ -115,6 +121,25 @@
                    field
                    (assoc-in options [::decoration ::presentation] ::field))))
 
+(defn checkboxes
+  [model field items {:keys [id-prefix] :as options}]
+  (doall
+    (map-indexed (fn [index [value label]]
+                   (let [id (str id-prefix (->id field) "-checkbox-" index)]
+                     (-> [:input {:type :checkbox
+                                  :id id
+                                  :checked (contains? (get-in @model field) value)
+                                  :on-change (fn [e]
+                                               (if (html/checked? e)
+                                                 (swap! model update-in field (fnil conj #{}) value)
+                                                 (swap! model update-in field disj value)))
+                                  :value value}]
+                         (decorate model field (-> options
+                                                   (assoc-in [::decoration ::presentation] ::inline-field)
+                                                   (assoc :caption label)))
+                         (with-meta {:key id}))))
+                 items)))
+
 (defn checkboxes-field
   "Renders a list of checkboxes that behavior like a multi-select select element."
   ([model field items] (checkboxes-field model field items {}))
@@ -124,22 +149,7 @@
       [:label.control-label (or (:caption options)
                                 (->caption field))]
       [:br]
-      (doall
-        (map-indexed (fn [index [value label]]
-                       (let [id (str (->id field) "-checkbox-" index)]
-                         (-> [:input {:type :checkbox
-                                      :id id
-                                      :checked (contains? (get-in @model field) value)
-                                      :on-change (fn [e]
-                                                  (if (html/checked? e)
-                                                    (swap! model update-in field (fnil conj #{}) value)
-                                                    (swap! model update-in field disj value)))
-                                      :value value}]
-                             (decorate model field (-> options
-                                                       (assoc-in [::decoration ::presentation] ::inline-field)
-                                                       (assoc :caption label)))
-                             (with-meta {:key id}))))
-                     items))])))
+      (checkboxes model field items options) ])))
 
 (defn text-input
   [model field {:keys [html on-change]
@@ -169,6 +179,99 @@
     [text-input model
                 field
                 (assoc-in options [::decoration ::presentation] ::field)]))
+
+(defn- update-field
+  ([model field e] (update-field model field e {}))
+  ([model field e {:keys [transform-fn]
+                   :or {transform-fn identity}}]
+   (swap! model assoc-in field (-> e .-target .-value transform-fn))))
+
+(def ^:private validation-rules
+  {:required (fn [model field]
+               (when (string/blank? (str (get-in model field)))
+                 (js/Promise.resolve "is required.")))
+   :format (fn [model field pattern]
+             (let [v (get-in model field)]
+               (when (and v (not (re-find pattern v)))
+                 (js/Promise.resolve "is invalid."))))
+   :length (fn [model field {:keys [min max]}]
+             (let [v (get-in model field)]
+               (when v
+                 (cond
+                   (and min
+                        (< (count v) min))
+                   (js/Promise.resolve (str "must be at least " min " characters."))
+
+                   (and max
+                        (> (count v) max))
+                   (js/Promise.resolve (str "cannot be more than " max " characters."))))))})
+
+(defn- check-validation-rule
+  [rule model field]
+  (let [[f args] (cond
+            (keyword? rule)
+            [(rule validation-rules) []]
+
+            (vector? rule)
+            [((first rule) validation-rules) (rest rule)]
+
+            :else
+            [rule []])]
+
+    (when-not f
+      (throw (str "Unrecognized rule: " (prn-str rule))))
+
+    (apply f (concat [model field] args))))
+
+(defn- check-validation-rules
+  [model field rules]
+  (when (seq rules)
+    (js/Promise.all
+      (map #(check-validation-rule % model field)
+           rules))))
+
+(defn- validate-field
+  [model field rules]
+  (when (seq rules)
+    (let [p (check-validation-rules @model field rules)]
+      (.then p (fn [results]
+                 (let [violations (->> results
+                                       (filter identity)
+                                       (map #(str (humanize (last field)) " " %)))]
+                   (if (seq violations)
+                     (swap! model #(-> %
+                                       (assoc-in [::input-classes field] "is-invalid")
+                                       (assoc-in [::invalid-feedback field] (string/join ", " violations))))
+                     (swap! model #(-> %
+                                       (assoc-in [::input-classes field] "is-valid")
+                                       (update-in [::invalid-feedback] dissoc field))))))))))
+
+(defn textarea-elem
+  ([model field] (textarea-elem model field {}))
+  ([model field options]
+   (let [changed? (r/atom false)
+         value (r/cursor model field)]
+     (fn []
+       (decorate
+         [:textarea.form-control
+          {:id (->id field)
+           :value @value
+           :class (input-class @model field)
+           :on-change (fn [e]
+                        (reset! changed? true)
+                        (update-field model field e))
+           :on-blur #(when (or @changed? (nil? @value))
+                       (validate-field model
+                                       field
+                                       (:validate options)))}]
+         model
+         field
+         options)))))
+
+(defn textarea-field
+  ([model field] (textarea-field model field {}))
+  ([model field options]
+   [textarea-elem model field (assoc-in options [::decoration ::presentation] ::field)]))
 
 (defn- one?
   [coll]
@@ -621,3 +724,16 @@
                       (assoc :list-elem result-list)
                       (update-in [::decoration] merge {::presentation ::field
                                                        ::target ::typeahead})))))))
+
+(def ^:private time-input-defaults
+  {:format-fn format-time
+   :parse-fn unformat-time})
+
+(defn time-input
+  [model field options]
+  [specialized-text-input model field (merge time-input-defaults options)])
+
+(defn invalid?
+  "Returns true if the model has any form validation errors."
+  [model]
+  (boolean (seq (::invalid-feedback @model))))
