@@ -121,24 +121,30 @@
                    field
                    (assoc-in options [::decoration ::presentation] ::field))))
 
-(defn checkboxes
+(defn- checkbox-inputs*
   [model field items {:keys [id-prefix] :as options}]
-  (doall
-    (map-indexed (fn [index [value label]]
-                   (let [id (str id-prefix (->id field) "-checkbox-" index)]
-                     (-> [:input {:type :checkbox
-                                  :id id
-                                  :checked (contains? (get-in @model field) value)
-                                  :on-change (fn [e]
-                                               (if (html/checked? e)
-                                                 (swap! model update-in field (fnil conj #{}) value)
-                                                 (swap! model update-in field disj value)))
-                                  :value value}]
-                         (decorate model field (-> options
-                                                   (assoc-in [::decoration ::presentation] ::inline-field)
-                                                   (assoc :caption label)))
-                         (with-meta {:key id}))))
-                 items)))
+  (->> items
+       (map-indexed (fn [index [value label]]
+                      (let [id (str id-prefix (->id field) "-checkbox-" index)]
+                        (-> [:input {:type :checkbox
+                                     :id id
+                                     :checked (contains? (get-in @model field) value)
+                                     :on-change (fn [e]
+                                                  (if (html/checked? e)
+                                                    (swap! model update-in field (fnil conj #{}) value)
+                                                    (swap! model update-in field disj value)))
+                                     :value value}]
+                            (decorate model field (-> options
+                                                      (assoc-in [::decoration ::presentation] ::inline-field)
+                                                      (assoc :caption label)))
+                            (with-meta {:key id})))))
+       doall))
+
+(defn checkbox-inputs
+  [model field items {:keys [container-html] :as options}]
+  [:div
+   (merge {} container-html)
+   (checkbox-inputs* model field items options)])
 
 (defn checkboxes-field
   "Renders a list of checkboxes that behavior like a multi-select select element."
@@ -149,7 +155,7 @@
       [:label.control-label (or (:caption options)
                                 (->caption field))]
       [:br]
-      (checkboxes model field items options) ])))
+      (checkbox-inputs* model field items options)])))
 
 (defn text-input
   [model field {:keys [html on-change]
@@ -528,17 +534,21 @@
   [{:keys [value-fn
            caption-fn
            on-change
+           create-fn
            items
            text-value
            model
            field]
     :or {on-change identity
          value-fn identity
+         create-fn (constantly nil)
          caption-fn identity}
     :as options}]
   (assoc options
          :select-item (fn [index]
-                        (let [item (when index (nth @items index))
+                        (let [item (if index
+                                     (nth @items index)
+                                     (create-fn @text-value))
                               [value caption] (if item
                                                 ((juxt value-fn caption-fn) item)
                                                 [nil ""])]
@@ -547,8 +557,8 @@
                                  assoc-in
                                  field
                                  value)
-                          (on-change item)
-                          (reset! text-value caption)))))
+                          (reset! text-value caption)
+                          (on-change item)))))
 
 (defn- assoc-key-down
   [{:keys [model

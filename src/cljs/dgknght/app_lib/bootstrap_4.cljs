@@ -34,8 +34,8 @@
          (forms/->caption field))]]])
 
 (defmethod forms/decorate [::forms/checkbox ::forms/inline-field ::bootstrap-4]
-  [[_ attr :as elem] model field options]
-  [:div.form-check.form-check-inline
+  [[_ attr :as elem] model field {:keys [input-container-html] :as options}]
+  [:div.form-check.form-check-inline (merge {} input-container-html)
    [:label.form-check-label {:for (:id attr)}
     (forms/decorate elem
                     model
