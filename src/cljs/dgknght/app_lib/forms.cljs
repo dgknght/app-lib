@@ -95,19 +95,37 @@
 
 (defn checkbox-input
   ([model field] (checkbox-input model field {}))
-  ([model field {:keys [on-change html]
+  ([model field {:keys [on-change
+                        value
+                        html]
                  :or {on-change identity}
                  :as options}]
-   (let [value (r/cursor model field)
-         checked (make-reaction #(boolean @value))]
+   (let [value-atm (r/cursor model field)
+         checked (if value
+                   (make-reaction #(contains? @value-atm value))
+                   (make-reaction #(boolean @value-atm)))
+         accept (if value
+                  #(swap! value-atm (fn [v]
+                                      (let [v-set (cond
+                                                    (set? v) v
+                                                    (nil? v) #{}
+                                                    :else #{v})]
+                                        (if (html/checked? %)
+                                          (conj v-set value)
+                                          (disj v-set value)))))
+                  #(reset! value-atm (html/checked? %)))
+         id (if value
+              (str (->id field) "-" value)
+              (->id field))]
      (fn []
        (decorate
-         [:input (merge {:id (->id field)}
+         [:input (merge {:id id}
                         html
                         {:type :checkbox
                          :checked @checked
+                         :value value
                          :on-change (fn [e]
-                                      (reset! value (html/checked? e))
+                                      (accept e)
                                       (on-change @model))})]
          model
          field
@@ -547,7 +565,7 @@
   (assoc options
          :select-item (fn [index]
                         (let [item (if index
-                                     (nth @items index)
+                                     (lib/safe-nth @items index)
                                      (create-fn @text-value))
                               [value caption] (if item
                                                 ((juxt value-fn caption-fn) item)
