@@ -139,9 +139,16 @@
                    field
                    (assoc-in options [::decoration ::presentation] ::field))))
 
+(defn- ensure-value-label-pair
+  [v]
+  (if (sequential? v)
+    v
+    [v (humanize v)]))
+
 (defn- checkbox-inputs*
   [model field items {:keys [id-prefix] :as options}]
   (->> items
+       (map ensure-value-label-pair)
        (map-indexed (fn [index [value label]]
                       (let [id (str id-prefix (->id field) "-checkbox-" index)]
                         (-> [:input {:type :checkbox
