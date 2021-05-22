@@ -761,7 +761,7 @@
                                                        ::target ::typeahead})))))))
 
 (def ^:private time-input-defaults
-  {:format-fn format-time
+  {:unparse-fn format-time
    :parse-fn unformat-time})
 
 (defn time-input
