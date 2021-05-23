@@ -1,8 +1,27 @@
 (ns dgknght.app-lib.bootstrap-4
-  (:require [reagent.core :as r]
+  (:require [clojure.string :as string]
+            [reagent.core :as r]
+            [dgknght.app-lib.client-macros :refer-macros [call
+                                                          with-retry]]
             [dgknght.app-lib.core :as lib]
             [dgknght.app-lib.forms :as forms]
             [dgknght.app-lib.bootstrap-icons :as icons]))
+
+(defn- jq-match
+  [selector]
+  (call js/window :j-query selector))
+
+(defn jq-toast
+  [selector]
+  (call (jq-match selector) :toast "show"))
+
+(defn jq-tool-tip
+  [selector]
+  (call (jq-match selector) :tooltip))
+
+(defn jq-popover
+  [selector opts]
+  (call (jq-match selector) :popover (clj->js opts)))
 
 (def ^:private add-class
   (lib/fscalar (fnil conj [])))
@@ -57,6 +76,22 @@
        (when append [:div.input-group-append append])]
       decorated)))
 
+(defn popover
+  [{:keys [message id title]}]
+  (with-retry (jq-popover (str "#" id) {:trigger "hover"}))
+  [:span.ml-1.hint-toggle {:id id
+                           :title title
+                           :data-toggle "popover"
+                           :data-content message}
+   (icons/icon :question {:size :small})])
+
+(defn- help-popover
+  [field {:keys [help]}]
+  (when help
+    (popover {:id (str "help-" (->> field (map name) (string/join "-")))
+              :message help
+              :title "Helpful Hint"})))
+
 (defmethod forms/decorate [::forms/text ::forms/field ::bootstrap-4]
   [[_ attr :as elem] model field {:keys [hide?] :as options}]
   (let [inner-decorated (forms/decorate elem
@@ -68,6 +103,7 @@
     [:div.form-group {:class (when (if (satisfies? IDeref hide?) @hide? hide?) "d-none")}
      [:label {:for (:id attr)} (or (:caption options)
                                    (forms/->caption field))]
+     (help-popover field options)
      inner-decorated
      [:div.invalid-feedback (invalid-feedback @model field)]]))
 
@@ -103,6 +139,7 @@
    [:label {:for (get-in elem [1 :id])}
     (or caption
         (forms/->caption field))]
+   (help-popover field options)
    (forms/decorate elem model field (update-in options [::forms/decoration] {::forms/target ::forms/text
                                                                              ::forms/presentation ::element}))
    (decorate-typeahead-list list-elem)
