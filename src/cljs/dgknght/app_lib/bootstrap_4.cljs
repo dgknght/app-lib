@@ -3,7 +3,8 @@
             [reagent.core :as r]
             [dgknght.app-lib.client-macros :refer-macros [call
                                                           with-retry]]
-            [dgknght.app-lib.core :as lib]
+            [dgknght.app-lib.html :refer [add-class
+                                          add-classes]]
             [dgknght.app-lib.forms :as forms]
             [dgknght.app-lib.bootstrap-icons :as icons]))
 
@@ -23,19 +24,13 @@
   [selector opts]
   (call (jq-match selector) :popover (clj->js opts)))
 
-(def ^:private add-class
-  (lib/fscalar (fnil conj [])))
-
-(def ^:private add-classes
-  (lib/fscalar (fnil concat [])))
-
-(defn- invalid-feedback
+(defn invalid-feedback
   [model field]
   (get-in model [::forms/invalid-feedback field]))
 
 (defmethod forms/decorate [::forms/checkbox ::forms/element ::bootstrap-4]
   [elem _model _field _options]
-  (update-in elem [1 :class] add-class "form-check-input"))
+  (add-class elem "form-check-input"))
 
 (defmethod forms/decorate [::forms/checkbox ::forms/field ::bootstrap-4]
   [[_ attr :as elem] model field {:keys [hide?] :as options}]
@@ -65,10 +60,7 @@
 
 (defmethod forms/decorate [::forms/text ::forms/element ::bootstrap-4]
   [elem _model _field {:keys [prepend append]}]
-  (let [decorated (update-in elem
-                             [1 :class]
-                             add-class
-                             "form-control")]
+  (let [decorated (add-class elem "form-control")]
     (if (or prepend append)
       [:div.input-group
        (when prepend [:div.input-group-prepend prepend])
@@ -85,7 +77,7 @@
                            :data-content message}
    (icons/icon :question {:size :small})])
 
-(defn- help-popover
+(defn help-popover
   [field {:keys [help]}]
   (when help
     (popover {:id (str "help-" (->> field (map name) (string/join "-")))
@@ -109,12 +101,10 @@
 
 (defn- decorate-list-item
   [elem]
-  (update-in elem
-             [1 :class]
-             add-classes
-             (cond-> ["list-group-item"
-                      "list-group-item-action"]
-               (-> elem meta :active?) (conj "active"))))
+  (add-classes elem
+               (cond-> ["list-group-item"
+                        "list-group-item-action"]
+                 (-> elem meta :active?) (conj "active"))))
 
 (defn- decorate-typeahead-list
   [[tag attr & elems]]
@@ -122,7 +112,7 @@
          tag
          (-> attr
              (update-in [:style] merge {:position :absolute :z-index 99})
-             (update-in [:class] add-class "list-group"))
+             (add-class "list-group"))
          (map decorate-list-item elems)))
 
 (defmethod forms/decorate [::forms/typeahead ::forms/element ::bootstrap-4]
@@ -281,3 +271,7 @@
    [:div {:role :status
           :class (str "spinner-" (name style))}
     [:span.sr-only "Loading..."]]))
+
+(defmethod forms/spinner ::bootstrap-4
+  [options]
+  (spinner options))

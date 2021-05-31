@@ -21,6 +21,7 @@
 (derive ::email ::text)
 (derive ::number ::text)
 (derive ::select ::text)
+(derive ::textarea ::text)
 
 (defn ->id
   [field]
@@ -66,7 +67,7 @@
           ::element))
 
 (defn- extract-framework
-  [options _elem]
+  [options & _]
   (let [ks [::decoration ::framework]]
     (or (get-in options ks)
         (get-in @defaults ks))))
@@ -81,11 +82,14 @@
     (when-not (= ::none (::decoration options))
       (extract-dispatch options elem))))
 
+(defmulti spinner extract-framework)
+
 (defmethod decorate :default
-  [elem _model field {::keys [decoration]}]
+  [elem _model field {::keys [decoration] :as options}]
   (when-not (= ::none decoration)
     (.warn js/console (prn-str {:unhandled-decoration decoration
                                 :elem elem
+                                :target (extract-target elem options)
                                 :field field})))
   elem)
 
@@ -284,7 +288,7 @@
          value (r/cursor model field)]
      (fn []
        (decorate
-         [:textarea.form-control
+         [:textarea
           {:id (->id field)
            :value @value
            :class (input-class @model field)
@@ -302,7 +306,7 @@
 (defn textarea-field
   ([model field] (textarea-field model field {}))
   ([model field options]
-   [textarea-elem model field (assoc-in options [::decoration ::presentation] ::field)]))
+   (textarea-elem model field (assoc-in options [::decoration ::presentation] ::field))))
 
 (defn- one?
   [coll]
@@ -514,14 +518,20 @@
   ^{:key (str "option-" field "-" value)}
   [:option {:value value} caption])
 
+(defn- derefable?
+  [x]
+  (satisfies? cljs.core/IDeref x))
+
 (defn select-elem
   "Renders a select element.
 
   model - An atom that will contain data entered into the form
   field - a vector describing the location in the model where the value for this field is to be saved. (As in get-in)
   items - The items to be rendered in the list. Each item in the list is a tuple with the value in the 1st position and the label in the 2nd."
-  [model field items {:keys [transform-fn]
-                      :or {transform-fn identity}
+  [model field items {:keys [transform-fn
+                             on-change]
+                      :or {transform-fn identity
+                           on-change identity}
                       :as options}]
   (fn []
     (decorate
@@ -535,10 +545,11 @@
                                       field
                                       (if (empty? value)
                                         nil
-                                        (transform-fn value)))))}
-       (->> (if (coll? items)
-              items
-              @items)
+                                        (transform-fn value)))
+                               (on-change model field)))}
+       (->> (if (derefable? items)
+              @items
+              items)
             (map #(select-option % field))
             doall)]
       model
@@ -772,3 +783,33 @@
   "Returns true if the model has any form validation errors."
   [model]
   (boolean (seq (::invalid-feedback @model))))
+
+(defn clean
+  "Given a model that has been populated and validated by
+  form controlrs, removes extra attributes added for those
+  purposes."
+  [m]
+  (dissoc m ::input-classes ::invalid-feedback))
+
+; TODO: This either needs to be decorated, or moved somewhere else
+(defn busy-button
+  [{:keys [html caption icon busy?]}]
+  (fn []
+    (if busy?
+      [:button.btn (merge html
+                          {:disabled (boolean @busy?)})
+       (cond
+         (and icon caption)
+         (icons/icon-with-text (if @busy? :spinner icon)
+                               caption)
+
+         icon
+         (if @busy?
+           (spinner {})
+           (icons/icon icon))
+
+         :else
+         (if @busy?
+           (icons/icon-with-text :spinner caption)
+           caption))]
+      [:div.alert.alert-danger "Must specify :busy?"])))

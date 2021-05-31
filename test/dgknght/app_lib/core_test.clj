@@ -164,9 +164,16 @@
          (lib/conj-to-last '((1 2) (3 4))
                            :new))))
 
-(deftest ensure-a-value-is-a-collection
+(deftest create-a-fn-that-ensures-a-collection
   (is (= {:one [1 2]}
          (update-in {:one 1}
                     [:one]
                     (lib/fscalar (fnil conj []))
-                    2))))
+                    2))
+      "A scalar value is replaced by a collection containing the value, then the value is added")
+  (is (= {:one [2]}
+         (update-in {}
+                    [:one]
+                    (lib/fscalar (fnil conj []))
+                    2))
+      "The missing attribute is created"))

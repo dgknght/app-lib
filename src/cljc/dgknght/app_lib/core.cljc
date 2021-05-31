@@ -188,7 +188,10 @@
 
 (defn- ->coll
   [x]
-  (if (coll? x) x [x]))
+  (cond
+    (nil? x)  []
+    (coll? x) x
+    :else     [x]))
 
 (defn fscalar
   "Given a function that expects a collection as the first argument, returns a

@@ -106,6 +106,56 @@
                                     %)))
          elements)))
 
+(def ^:private attrs
+  {:xmlns "http://www.w3.org/2000/svg"
+   :viewBox "0 0 16 16"
+   :width 32
+   :height 32
+   :fill "currentColor"})
+
+(def ^:private weights
+  {:ultra-light 0.5
+   :thin        1
+   :light       1.5
+   :regular     2
+   :medium      2.5
+   :bold        3
+   :heavy       3.5})
+
+(defn- apply-weight
+  [{:keys [weight] :as opts}]
+  (let [width (get-in weights [weight])]
+    (cond-> (dissoc opts :weight)
+      width (assoc :stroke-width width))))
+
+(def ^:private sizes
+  {:small 16
+   :large 32})
+
+(defn- apply-size
+  [{:keys [size] :as opts}]
+  (let [pixels (get-in sizes [size])]
+    (cond-> (dissoc opts :size)
+      pixels (assoc :width pixels
+                    :height pixels))))
+
+(defn- apply-style
+  [{:keys [style] :as opts}]
+  (cond-> (dissoc opts :style)
+    (= :round style) (assoc :stroke-linejoin :round
+                            :stroke-linecap :round)
+    (= :bevel style) (assoc :stroke-linejoin :bevel
+                            :stroke-linecap :butt)
+    (= :miter style) (assoc :stroke-linejoin :miter
+                            :stroke-linecap :butt)))
+
+(defn- prepare-opts
+  [opts]
+  (-> opts
+      apply-weight
+      apply-size
+      apply-style))
+
 (defn icon
   ([icon-key]
    (icon icon-key {}))
@@ -113,15 +163,13 @@
    (if-let [elements (get-icon-def icon-key)]
      (apply vector
             :svg.bi
-            {:class (str "bi-" (name icon-key))
-             :width "1em"
-             :height "1em"
-             :view-box "0 0 16 16"
-             :fill "currentColor"
-             :xmlns "http://www.w3.org/2000/svg"}
+            (->> options
+                 prepare-opts
+                 (merge attrs))
             elements)
      [:span.bg-danger options (str "Icon " (name icon-key) " not found")])))
 
+; TODO: this needs to be decorated or moved somewhere else
 (defn icon-with-text
   [icon-key text]
   [:span.d-flex.align-items-center

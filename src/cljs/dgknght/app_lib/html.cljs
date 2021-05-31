@@ -1,6 +1,7 @@
 (ns dgknght.app-lib.html
   (:refer-clojure :exclude [comment])
   (:require [dgknght.app-lib.client-macros :refer-macros [with-retry]]
+            [dgknght.app-lib.core :as lib]
             [goog.object :as obj]))
 
 (defn target
@@ -114,3 +115,21 @@
    [:a.btn.btn-light {:href "/auth/google/start"}
     (google-g options)
     " Sign In With Google"]))
+
+(def conj-to-vec
+  (lib/fscalar (fnil conj [])))
+
+(defn add-class
+  [[tag & body :as elem] css-class]
+  (if (map? (get-in elem [1]))
+    (update-in elem [1 :class] conj-to-vec css-class)
+    (apply vector tag {:class [css-class]} body)))
+
+(def concat-to-vec
+  (lib/fscalar (fnil concat [])))
+
+(defn add-classes
+  [[tag & body :as elem] & k]
+  (if (map? (get-in elem [1]))
+    (update-in elem [1 :class] concat-to-vec (flatten k))
+    (apply vector tag {:class k} body)))
