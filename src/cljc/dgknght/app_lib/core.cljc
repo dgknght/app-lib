@@ -133,6 +133,8 @@
 
 (defn index-by
   [key-fn coll]
+  {:pre [(sequential? coll)]}
+
   (->> coll
        (map (juxt key-fn identity))
        (into {})))

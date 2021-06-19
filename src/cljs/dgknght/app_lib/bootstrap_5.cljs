@@ -266,7 +266,23 @@
                                                   ::forms/element))]
     [:div.mb-3 {:class (when (if (satisfies? IDeref hide?) @hide? hide?) "d-none")}
      [:label.form-label {:for (:id attr)} (or (:caption options)
-                                   (forms/->caption field))]
+                                              (forms/->caption field))]
      (bs-4/help-popover field options)
      inner-decorated
      [:div.invalid-feedback (bs-4/invalid-feedback @model field)]]))
+
+(defmethod forms/decorate [::forms/typeahead ::forms/field ::bootstrap-5]
+  [elem model field {:as options
+                     :keys [hide? caption list-elem]}]
+  [:div.mb-3 {:class (when (if (satisfies? IDeref hide?) @hide? hide?) "d-none")}
+   [:label.form-label {:for (get-in elem [1 :id])}
+    (or caption
+        (forms/->caption field))]
+   (bs-4/help-popover field options)
+   (forms/decorate elem
+                   model
+                   field
+                   (update-in options [::forms/decoration] merge {::forms/target ::forms/text
+                                                                  ::forms/presentation ::forms/element}))
+   (bs-4/decorate-typeahead-list list-elem)
+   [:div.invalid-feedback (bs-4/invalid-feedback @model field)]])

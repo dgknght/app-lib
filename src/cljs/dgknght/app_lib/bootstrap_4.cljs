@@ -4,7 +4,8 @@
             [dgknght.app-lib.client-macros :refer-macros [call
                                                           with-retry]]
             [dgknght.app-lib.html :refer [add-class
-                                          add-classes]]
+                                          add-classes
+                                          conj-to-vec]]
             [dgknght.app-lib.forms :as forms]
             [dgknght.app-lib.bootstrap-icons :as icons]))
 
@@ -106,14 +107,15 @@
                         "list-group-item-action"]
                  (-> elem meta :active?) (conj "active"))))
 
-(defn- decorate-typeahead-list
-  [[tag attr & elems]]
-  (apply vector
-         tag
-         (-> attr
-             (update-in [:style] merge {:position :absolute :z-index 99})
-             (add-class "list-group"))
-         (map decorate-list-item elems)))
+(defn decorate-typeahead-list
+  [[tag attr :as elem]]
+  (let [elems (drop 2 elem)]
+    (apply vector
+           tag
+           (-> attr
+               (update-in [:style] merge {:position :absolute :z-index 99})
+               (update-in [:class] conj-to-vec "list-group"))
+           (map decorate-list-item elems))))
 
 (defmethod forms/decorate [::forms/typeahead ::forms/element ::bootstrap-4]
   [elem model field {:as options
@@ -130,8 +132,11 @@
     (or caption
         (forms/->caption field))]
    (help-popover field options)
-   (forms/decorate elem model field (update-in options [::forms/decoration] {::forms/target ::forms/text
-                                                                             ::forms/presentation ::element}))
+   (forms/decorate elem
+                   model
+                   field
+                   (update-in options [::forms/decoration] merge {::forms/target ::forms/text
+                                                                  ::forms/presentation ::forms/element}))
    (decorate-typeahead-list list-elem)
    [:div.invalid-feedback (invalid-feedback @model field)]])
 

@@ -89,7 +89,7 @@
   (when-not (= ::none decoration)
     (.warn js/console (prn-str {:unhandled-decoration decoration
                                 :elem elem
-                                :target (extract-target elem options)
+                                :target (extract-target options elem)
                                 :field field})))
   elem)
 
@@ -652,7 +652,8 @@
            items
            index
            select-item
-           list-caption-fn]}]
+           list-caption-fn]
+    :or {list-attr {}}}]
   (apply vector
          :div
          list-attr
@@ -695,7 +696,7 @@
                (let [v-before (get-in before field)
                      v-after (get-in after field)]
                  (if v-after
-                   (when (nil? v-before)
+                   (when-not v-before
                      (find-fn v-after #(reset! text-value (caption-fn %))))
                    (reset! text-value ""))))))
 
