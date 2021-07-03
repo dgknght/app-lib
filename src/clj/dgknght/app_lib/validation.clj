@@ -98,6 +98,7 @@
                                   'clojure.core/string? "%s must be a string"
                                   'clojure.core/integer? "%s must be an integer"
                                   'clojure.core/decimal? "%s must be a number"
+                                  'clojure.core/vector? "%s must be a list of values"
                                   'decimal? "%s must be a number"
                                   'dgknght.app-lib.core/present? "%s is required"
                                   'dgknght.app-lib.validation/non-empty-string? "%s is required"
@@ -218,7 +219,7 @@
   "Validates the specified model using the specified spec"
   [model spec]
   (if-let [result (s/explain-data spec model)]
-    (assoc model ::valid? false ::explanation result ::errors (->errors result))
+    (assoc model ::valid? false ::errors (->errors result))
     (assoc model ::valid? true ::errors {})))
 
 (defn has-error?

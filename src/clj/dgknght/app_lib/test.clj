@@ -58,9 +58,12 @@
     `(let [validated# (if ~spec
                         (dgknght.app-lib.validation/validate ~model ~spec)
                         ~model)
-           messages# (set (dgknght.app-lib.validation/error-messages validated# ~path))]
+           messages# (set (dgknght.app-lib.validation/error-messages validated# ~path))
+           pass?# (if ~expected-msg
+                    (messages# ~expected-msg)
+                    (seq messages#))]
        (do-report (merge {:expected ~expected-msg :actual messages#}
-                         (if (messages# ~expected-msg)
+                         (if pass?#
                            {:type :pass :message ~msg}
                            {:type :fail :message (report-msg ~msg "Didn't find the expected error message")}))))))
 
