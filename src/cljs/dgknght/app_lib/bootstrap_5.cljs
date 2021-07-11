@@ -9,7 +9,7 @@
 
 (derive ::bootstrap-5 ::bs-4/bootstrap-4)
 
-(defn- nav-item
+(defn nav-item
   [{:keys [id path active? label nav-fn]
     :or {path "#"}}]
   ^{:key (str "nav-item-" (name id))}
