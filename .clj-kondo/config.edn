@@ -1,3 +1,5 @@
 {:linters {:unresolved-symbol {:exclude [(clojure.test/is [valid?
                                                            invalid?
-                                                           comparable?])]}}}
+                                                           comparable?
+                                                           url-like?
+                                                           not-url-like?])]}}}
