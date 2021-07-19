@@ -289,16 +289,18 @@
      (fn []
        (decorate
          [:textarea
-          {:id (->id field)
-           :value @value
-           :class (input-class @model field)
-           :on-change (fn [e]
-                        (reset! changed? true)
-                        (update-field model field e))
-           :on-blur #(when (or @changed? (nil? @value))
-                       (validate-field model
-                                       field
-                                       (:validate options)))}]
+          (merge
+            (:html options)
+            {:id (->id field)
+             :value @value
+             :class (input-class @model field)
+             :on-change (fn [e]
+                          (reset! changed? true)
+                          (update-field model field e))
+             :on-blur #(when (or @changed? (nil? @value))
+                         (validate-field model
+                                         field
+                                         (:validate options)))})]
          model
          field
          options)))))
