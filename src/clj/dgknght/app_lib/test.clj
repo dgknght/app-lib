@@ -1,16 +1,21 @@
 (ns dgknght.app-lib.test
   (:require [clojure.test :refer [assert-expr do-report]]
-            [clojure.data]
+            [clojure.data :refer [diff]]
             [clojure.string :as string]
             [clojure.data.zip :as zip]
             [clojure.data.zip.xml :refer [xml1->]]
             [clojure.zip :refer [xml-zip]]
+            [clojure.pprint :refer [pprint]]
             [cheshire.core :as json]
             [crouton.html :as html]
+            [lambdaisland.uri :refer [uri
+                                      query-string->map]]
             [dgknght.app-lib.core :refer [prune-to
-                                          safe-nth]]
+                                          safe-nth
+                                          update-in-if]]
             [dgknght.app-lib.models :as models]
-            [dgknght.app-lib.validation]))
+            [dgknght.app-lib.validation])
+  (:import java.io.StringWriter))
 
 (defn parse-html-body
   [{:keys [body html-body] :as response}]
@@ -171,6 +176,61 @@
           :type result#
           :diffs [[actual# (take 2 diffs#)]]}))))
 
+(defn comparable-uri
+  [input]
+  (-> {}
+      (into (uri input))
+      (update-in-if [:query] query-string->map)))
+
+(defn uri=
+  [& args]
+  (->> args
+       (map comparable-uri)
+       (apply =)))
+
+(defn uri-diff
+  [& args]
+  (->> args
+       (take 2)
+       (map comparable-uri)
+       (apply diff)))
+
+(defn uri-diff-str
+  [uri-1 uri-2]
+  (let [out (StringWriter.)
+        [missing extra] (uri-diff uri-1 uri-2)]
+    (.write out "missing:\n")
+    (pprint missing out)
+    (.write out "extra:\n")
+    (pprint extra out)
+    (.toString out)))
+
+(defmethod assert-expr 'url-like?
+  [msg form]
+  (let [expected (uri (safe-nth form 1))
+        actual (safe-nth form 2)]
+    `(let [actual# (uri ~actual)]
+       (do-report {:expected (str ~expected)
+                   :actual (str actual#)
+                   :message (format "%s:\n%s"
+                                    ~msg
+                                    (uri-diff-str ~expected actual#))
+                   :type (if (uri= ~expected actual#)
+                           :pass
+                           :fail)}))))
+
+(defmethod assert-expr 'not-url-like?
+  [msg form]
+  (let [expected (uri (safe-nth form 1))
+        actual (safe-nth form 2)]
+    `(let [actual# (uri ~actual)]
+       (do-report {:expected (str ~expected)
+                   :actual (str actual#)
+                   :message ~msg
+                   :type (if (uri= ~expected actual#)
+                           :fail
+                           :pass)}))))
+
 (defmethod assert-expr 'seq-of-maps-like?
   [msg form]
   (let [expected (safe-nth form 1)
@@ -179,7 +239,7 @@
                                 ~actual)]
        (do-report {:expected ~expected
                    :actual actual#
-                   :msg ~msg
+                   :message ~msg
                    :type (if (= ~expected actual#)
                            :pass
                            :fail)}))))

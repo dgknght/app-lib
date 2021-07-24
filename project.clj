@@ -1,4 +1,4 @@
-(defproject com.github.dgknght/app-lib "0.1.6"
+(defproject com.github.dgknght/app-lib "0.1.7"
   :description "Library of commonly used functions for web app development"
   :url "https://github.com/dgknght/app-lib"
   :license {:name "EPL-2.0 OR GPL-2.0-or-later WITH Classpath-exception-2.0"
@@ -11,7 +11,7 @@
                  [crouton "0.1.2"]
                  [clj-time "0.15.2"]
                  [com.andrewmcveigh/cljs-time "0.5.2"]
-                 [stowaway "0.1.8"]
+                 [stowaway "0.1.10"]
                  [camel-snake-kebab "0.4.2"]
                  [reagent "0.8.0"]
                  [lein-doo "0.1.11"]
