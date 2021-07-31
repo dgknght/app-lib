@@ -1,6 +1,7 @@
 (ns dgknght.app-lib.web
   (:require [clojure.string :as string]
             [dgknght.app-lib.core :refer [trace]]
+            [dgknght.app-lib.dates :as dates]
             #?(:cljs [dgknght.app-lib.time :as tm])
             #?(:clj [clj-time.format :as tf]
                :cljs [cljs-time.format :as tf]))
@@ -37,11 +38,20 @@
   (when date
     (tf/unparse-local-date (tf/formatters :date) date)))
 
+(def ^:private non-nil-string?
+  (every-pred string? seq))
+
+(defn- date-string?
+  [d]
+  (when (non-nil-string? d)
+    (re-find #"^\d{4}-\d{2}-\d{2}$" d)))
+
 (def unserialize-date
   (some-fn #(when (date? %) %)
-           #(when (and (string? %)
-                       (seq %))
-              (tf/parse-local-date (tf/formatters :date) %))))
+           #(when (date-string? %)
+              (tf/parse-local-date (tf/formatters :date) %))
+           #(when (non-nil-string? %)
+              (dates/relative %))))
 
 (defn serialize-date-time
   [date-time]

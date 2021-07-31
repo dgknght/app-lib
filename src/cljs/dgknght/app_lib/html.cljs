@@ -133,3 +133,12 @@
   (if (map? (get-in elem [1]))
     (update-in elem [1 :class] concat-to-vec (flatten k))
     (apply vector tag {:class k} body)))
+
+(defn debounce
+  ([f] (debounce f 300))
+  ([f timeout]
+   (let [id (atom nil)]
+     (fn [& args]
+       (js/clearTimeout @id)
+       (reset! id (js/setTimeout #(apply f args)
+                                 timeout))))))
