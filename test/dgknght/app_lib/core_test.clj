@@ -55,15 +55,25 @@
                            inc))
       "The map is not modified if the key is not present"))
 
-(deftest conditionally-assoc-in
-  (is (= {:value 1}
-         (lib/assoc-if {} :value 1)))
-  (is (= {}
-         (lib/assoc-if {} :value nil))))
+(deftest assoc-if-value-is-present
+  (are [m k v expected] (= expected (lib/assoc-if m k v))
+       {} :value 1   {:value 1}
+       {} :value nil {}))
+
+(deftest assoc-unless-value-is-already-present
+  (are [m k v expected] (= expected (lib/assoc-unless m k v))
+       {:value 2}   :value 1 {:value 2}
+       {:value nil} :value 1 {:value nil}
+       {}           :value 1 {:value 1}))
 
 (deftest test-for-deeply-contained-key
-  (is (lib/deep-contains? {:one 1} :one))
-  (is (lib/deep-contains? [:and {:one 1}] :one)))
+  (are [input expected] (= expected
+                           (lib/deep-contains? input :one))
+       {}              false
+       {:one 1}        true
+       [:or
+        {:one 1}
+        {:two 2}]      true))
 
 (deftest find-deeply-contained-value
   (is (= 1 (lib/deep-get {:one 1} :one)))
@@ -164,7 +174,14 @@
          (lib/conj-to-last '((1 2) (3 4))
                            :new))))
 
-(deftest create-a-fn-that-ensures-a-collection
+(deftest ensure-a-value-is-a-sequence
+  (are [input expected] (= expected (lib/->sequential input))
+       [:one] [:one]
+       :one   [:one]
+       {}     [{}]
+       [{}]   [{}]))
+
+(deftest create-a-fn-that-ensures-a-sequence
   (is (= {:one [1 2]}
          (update-in {:one 1}
                     [:one]

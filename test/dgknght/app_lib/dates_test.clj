@@ -62,3 +62,50 @@
                 "end-of-previous-year"    (t/local-date 2019 12 31)
                 "start-of-previous-month" (t/local-date 2020 2 1)
                 "end-of-previous-month"   (t/local-date 2020 2 29))))
+
+(deftest convert-nominal-comparatives-to-symbolic
+  (let [date (t/local-date 2015 1 1)
+        other-date (t/local-date 2015 1 31)]
+    (are [criteria k expected] (= expected
+                                  (dates/symbolic-comparatives criteria k))
+         {:start-after date}
+         :start
+         {:start-on [:> date]}
+
+         {:transaction-date-after date}
+         :transaction-date
+         {:transaction-date [:> date]}
+
+         {:transaction-date-on-or-after date
+          :transaction-date-on-or-before other-date}
+         :transaction-date
+         {:transaction-date [:between date other-date]}
+
+         {:start-on-or-after date
+          :start-on-or-before other-date}
+         :start-on
+         {:start-on [:between date other-date]})))
+
+(deftest convert-symbolic-comparatives-to-nominal
+  (let [date (t/local-date 2015 1 1)
+        other-date (t/local-date 2015 1 31)]
+    (are [criteria k expected] (= expected
+                                  (dates/nominal-comparatives criteria k))
+         {:start-on [:> date]}
+         :start
+         {:start-after date}
+
+         {:transaction-date [:> date]}
+         :transaction-date
+         {:transaction-date-after date}
+
+         {:transaction-date [:between date other-date]}
+
+         :transaction-date
+         {:transaction-date-on-or-after date
+          :transaction-date-on-or-before other-date}
+
+         {:start-on [:between date other-date]}
+         :start-on
+         {:start-on-or-after date
+          :start-on-or-before other-date})))

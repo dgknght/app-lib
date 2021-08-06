@@ -5,6 +5,7 @@
                :cljs [cljs-time.coerce :as tc])
             #?(:clj [clj-time.periodic :refer [periodic-seq]]
                :cljs [cljs-time.periodic :refer [periodic-seq]])
+            [clojure.string :as string]
             [dgknght.app-lib.core :refer [parse-int]]))
 
 (defn- parse-partial
@@ -99,3 +100,146 @@
       "end-of-previous-year"    (t/local-date (t/year (t/minus today (t/years 1))) 12 31)
       "start-of-previous-month" (t/first-day-of-the-month (t/minus today (t/months 1)))
       "end-of-previous-month"   (t/last-day-of-the-month (t/minus today (t/months 1))))))
+
+(defn nominal-keys
+  "Given a canonical key, return all of the nominal variants"
+  [canonical]
+  (let [str-key (name canonical)
+        [_  base-key] (re-find #"^(.*)(?:-on|-at)$" str-key)]
+    (map keyword [str-key
+                  (str base-key "-before")
+                  (str str-key "-or-before")
+                  (str base-key "-after")
+                  (str str-key "-or-after")])))
+
+(defn- includes-time?
+  [date]
+  #?(:clj (instance? org.joda.time.DateTime date)
+     :cljs (instance? goog.date.DateTime date)))
+
+(defn- nominal-key
+  [key-base [oper value]]
+  (let [prep (if (includes-time? value)
+               "at"
+               "on")]
+    (keyword
+     (str
+      key-base
+      "-"
+      (case oper
+        :>  "after"
+        :>= (str prep "-or-after")
+        :<  "before"
+        :<= (str prep "-or-before"))))))
+
+(defn- apply-to-dynamic-keys
+  [m {:keys [key-base suffixes update-fn]}]
+  (let [str-k (name key-base)]
+    (->> suffixes
+         (mapv #(keyword (str str-k %)))
+         (reduce (fn [result k]
+                   (if-let [value (get-in m [k])]
+                     (-> result
+                         (dissoc k)
+                         (update-fn str-k k value))
+                     result))
+                 m))))
+
+(defn- between->nominal
+  [m key-base]
+  (let [[_ start end] (get-in m [key-base])]
+    (if (and start end)
+      (let [str-key (name key-base)
+            prefix (if (string/ends-with? str-key "date")
+                     "-on"
+                     "")]
+        (-> m
+            (assoc (keyword (str str-key
+                                 prefix
+                                 "-or-after")) start
+                   (keyword (str str-key
+                                 prefix
+                                 "-or-before")) end)
+            (dissoc key-base)))
+      m)))
+
+(defn nominal-comparatives
+  "Accepts a map and a key base and converts values with attributes
+  that match the key base from symbolic comparatives into nominal
+  comparatives.
+
+  (nominal-comparatives {:end-on [:> some-date]} :end) => {:end-after some-date}"
+  [m key-base]
+  (-> m
+      (between->nominal key-base)
+      (apply-to-dynamic-keys
+       {:key-base key-base
+        :suffixes ["-on" "-at" nil]
+        :update-fn (fn [result str-k _ value]
+                     (assoc result (nominal-key str-k value)
+                            (second value)))})))
+
+(def ^:private suffix-keys
+  {"before"       :<
+   "on-or-before" :<=
+   "at-or-before" :<=
+   "after"        :>
+   "on-or-after"  :>=
+   "at-or-after"  :>=})
+
+(defn nominative-variations
+  [key-base]
+  (let [str-key (name key-base)]
+    (map #(keyword (str str-key %))
+         [""
+          "-before"
+          "-on-or-before"
+          "-at-or-before"
+          "-after"
+          "-on-or-after"])))
+
+(defn- symbolic-key
+  [key-base k value]
+  (let [key-suffix (string/replace (name k) (str key-base "-") "")
+        final-key (keyword
+                   (str key-base
+                        (when-not (string/ends-with? key-base "-date")
+                          (if (includes-time? value) "-at" "-on"))))
+        oper (get-in suffix-keys [key-suffix])]
+    [final-key [oper value]]))
+
+(defn nominal->between
+  [m key-base]
+  (let [str-key (name key-base)
+        prefix (if (string/ends-with? str-key "date")
+                 "-on"
+                 "")
+        start-key (keyword (str (name key-base) prefix "-or-after"))
+        end-key (keyword (str (name key-base) prefix "-or-before"))
+        start (get-in m [start-key])
+        end (get-in m [end-key])]
+    (if (and start end)
+      (-> m
+          (dissoc start-key end-key)
+          (assoc key-base [:between start end]))
+      m)))
+
+(defn symbolic-comparatives
+  "Accepts a map with comparative keys and updates the
+  values with symbolic operators.
+
+  (symbolic-comparatives {:end-after some-date} :end) => {:end-on [:> some-date]}"
+  [m key-base]
+  (-> m
+      (nominal->between key-base)
+      (apply-to-dynamic-keys
+       {:key-base key-base
+        :suffixes ["-before"
+                   "-on-or-before"
+                   "-at-or-before"
+                   "-after"
+                   "-on-or-after"
+                   "-at-or-after"]
+        :update-fn (fn [result str-k k value]
+                     (let [[new-key value-with-oper] (symbolic-key str-k k value)]
+                       (assoc result new-key value-with-oper)))})))

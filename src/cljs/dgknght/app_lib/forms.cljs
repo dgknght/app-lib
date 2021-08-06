@@ -668,6 +668,10 @@
               (list-caption-fn item)])
            @items)))
 
+(defn- identity-callback
+  [v callback]
+  (callback v))
+
 (defn- typeahead-state
   [model field {:keys [caption-fn
                        list-caption-fn
@@ -679,12 +683,20 @@
               :text-value (r/atom "")
               :items (r/atom nil)
               :index (r/atom nil)
+              ; This isn't quite the right solution, because caption-fn
+              ; is used on the results of search-fn and find-fn. If all
+              ; we're storing is a raw value (not a full model), then search-fn
+              ; will still be resolving the caption from a model, while find-fn
+              ; will be resolving the caption from a simple value.
+              ;
+              ; This is currently solved in the calling application like this:
+              ; :caption-fn #(or (:description %) %)
               :caption-fn (or caption-fn
                               identity)
               :list-caption-fn (or list-caption-fn
                                    caption-fn
                                    identity)
-              :find-fn (or find-fn identity)})
+              :find-fn (or find-fn identity-callback)})
       (update-in [:html :id] (fnil identity (->id field)))
       assoc-select-item
       assoc-key-down
@@ -698,7 +710,8 @@
                (let [v-before (get-in before field)
                      v-after (get-in after field)]
                  (if v-after
-                   (when-not v-before
+                   (when (or (nil? v-before)
+                             (not= (:id before) (:id after)))
                      (find-fn v-after #(reset! text-value (caption-fn %))))
                    (reset! text-value ""))))))
 

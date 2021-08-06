@@ -236,13 +236,17 @@
   (let [expected (safe-nth form 1)
         actual (safe-nth form 2)]
     `(let [actual# (map-indexed #(prune-to %2 (get-in ~expected [%1]))
-                                ~actual)]
+                                ~actual)
+           result# (if (= ~expected actual#)
+                     :pass
+                     :fail)
+           diffs# (when (= :fail result#)
+                    (diff ~expected actual#))]
        (do-report {:expected ~expected
                    :actual actual#
                    :message ~msg
-                   :type (if (= ~expected actual#)
-                           :pass
-                           :fail)}))))
+                   :type result#
+                   :diffs [[actual# (take 2 diffs#)]]}))))
 
 (defmethod assert-expr 'seq-with-map-like?
   [msg form]
@@ -452,3 +456,12 @@
   "Adds a user agent header to the request"
   [req user-agent]
   (update-in req [:headers] assoc "user-agent" user-agent))
+
+(defn attr-set
+  "Given a list of maps, return a set containing the
+  values at the specified attribute for each map"
+  [attr ms]
+  (when (sequential? ms)
+    (->> ms
+         (map #(get-in % [attr]))
+         set)))

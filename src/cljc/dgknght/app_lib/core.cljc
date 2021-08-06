@@ -62,9 +62,20 @@
 (defn assoc-if
   "Performs an assoc if the specified value is not nil."
   [m k v]
+  {:pre [(map? m)]}
+
   (if v
     (assoc m k v)
     m))
+
+(defn assoc-unless
+  "Performs an assoc unless the map already contains the key"
+  [m k v]
+  {:pre [(map? m)]}
+
+  (if (contains? m k)
+    m
+    (assoc m k v)))
 
 (defn update-in-if
   "Performs an update-in if the key already exists in the map."
@@ -188,20 +199,20 @@
   (conj (pop lists)
         (conj (peek lists) x)))
 
-(defn- ->coll
+(defn ->sequential
   [x]
   (cond
-    (nil? x)  []
-    (coll? x) x
-    :else     [x]))
+    (nil? x)         []
+    (sequential? x)  x
+    :else            [x]))
 
 (defn fscalar
-  "Given a function that expects a collection as the first argument, returns a
-  function that, if passed something that isn't a collection, creates a new
-  collection, adds the first arg to it, then applies the function"
+  "Given a function that expects something sequential as the first argument,
+  returns a function that, if passed something that isn't sequential, creates a new
+  vector, adds the first arg to it, then applies the function"
   [f]
   (fn
-    ([x] (f (->coll x)))
-    ([x a] (f (->coll x) a))
-    ([x a b] (f (->coll x) a b))
-    ([x a b & cs] (apply f (->coll x) a b cs))))
+    ([x] (f (->sequential x)))
+    ([x a] (f (->sequential x) a))
+    ([x a b] (f (->sequential x) a b))
+    ([x a b & cs] (apply f (->sequential x) a b cs))))

@@ -32,3 +32,10 @@
   (is (comparable? {:one 1}
                    {:one 1
                     :two 2})))
+
+(deftest get-a-set-from-an-attribute
+  (is (= #{"One" "Two" "Three"}
+         (t/attr-set :number
+                     [{:number "One"}
+                      {:number "Two"}
+                      {:number "Three"}]))))
