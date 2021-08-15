@@ -335,12 +335,13 @@
    (email-field model field {}))
   ([model field options]
    (text-field model field (merge options {:type :email
-                                           :auto-complete "email"}))))
+                                           :html {:auto-complete "email"}}))))
 
 (defn password-field
-  ([model field options]
+  ([model field {:keys [new?] :as options}]
    (text-field model field (merge options {:type :password
-                                           :auto-complete "current-password"}))))
+                                           :html {:auto-complete (if new? "new-password"
+                                                                   "current-password")}}))))
 
 (defn- specialized-text-input
   [model field {input-type :type

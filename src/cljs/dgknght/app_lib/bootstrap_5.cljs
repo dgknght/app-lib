@@ -10,15 +10,17 @@
 (derive ::bootstrap-5 ::bs-4/bootstrap-4)
 
 (defn nav-item
-  [{:keys [id path active? label nav-fn]
+  [{:keys [id path active? label nav-fn badge badge-class]
     :or {path "#"}}]
   ^{:key (str "nav-item-" (name id))}
   [:li.nav-item
-   [:a.nav-link (cond-> {:href path}
-                  nav-fn (assoc :on-click nav-fn)
-                  active? (assoc :class "active"
-                                 :aria-current "page"))
-    (or label (title-case id))]])
+   [:a.nav-link.d-flex.align-items-center (cond-> {:href path}
+                                            nav-fn (assoc :on-click nav-fn)
+                                            active? (assoc :class "active"
+                                                           :aria-current "page"))
+    (or label (title-case id))
+    (when badge
+      [:span.badge.ms-1 {:class badge-class} badge])]])
 
 (defn navbar
   [items {:keys [brand brand-path profile-photo-url]}]

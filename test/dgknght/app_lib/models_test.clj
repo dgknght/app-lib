@@ -1,5 +1,5 @@
 (ns dgknght.app-lib.models-test
-  (:require [clojure.test :refer [deftest is]]
+  (:require [clojure.test :refer [deftest is are]]
             [dgknght.app-lib.models :as models]))
 
 (deftest get-a-model-id
@@ -128,3 +128,24 @@
          (models/unnest {:id-fn :id
                             :path-segment-fn :name}
                            nested-list))))
+
+(deftest extract-a-nested-model
+  (are [input expected] (= expected (models/extract-nested input :customer))
+       {:id 1
+        :order-number "001"
+        :customer-id 2
+        :customer-first-name "John"
+        :customer-last-name "Doe"}
+       {:id 1
+        :order-number "001"
+        :customer-id 2
+        :customer {:id 2
+                   :first-name "John"
+                   :last-name "Doe"}}
+
+       {:id 1
+        :order-number "001"
+        :customer-id 2}
+       {:id 1
+        :order-number "001"
+        :customer-id 2}))

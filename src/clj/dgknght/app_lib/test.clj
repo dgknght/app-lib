@@ -282,6 +282,34 @@
                            {:type :pass
                             :message ~msg}))))))
 
+(defmethod assert-expr 'seq-containing-value?
+  [msg form]
+  (let [coll (safe-nth form 1)
+        expected (safe-nth form 2)]
+    `(let [actual# (set ~coll)]
+       (do-report
+         {:type (if (actual# ~expected) :pass :fail)
+          :message (report-msg ~msg
+                               (format "Expected to find value %s within, but didn't find it"
+                                       ~expected
+                                       actual#))
+          :expected ~expected
+          :actual actual#}))))
+
+(defmethod assert-expr 'seq-excluding-value?
+  [msg form]
+  (let [coll (safe-nth form 1)
+        expected (safe-nth form 2)]
+    `(let [actual# (set ~coll)]
+       (do-report
+         {:type (if (actual# ~expected) :fail :pass)
+          :message (report-msg ~msg
+                               (format "Expected not to find value %s within, but found it"
+                                       ~expected
+                                       actual#))
+          :expected ~expected
+          :actual actual#}))))
+
 (defmethod assert-expr 'seq-containing-model?
   [msg form]
   (let [coll (safe-nth form 1)

@@ -1,4 +1,5 @@
-(ns dgknght.app-lib.models)
+(ns dgknght.app-lib.models
+  (:require [clojure.string :as string]))
 
 (defn ->id
   "Given a model with the id is stored at :id, or the id iteself, return the id.
@@ -90,3 +91,38 @@
                                    :path-segment-fn :name}
                                   options))
            collection)))
+
+(defn extract-nested
+  "Given a model with an inner model nested at the top level via
+  prefixed keys, returns a model with the nested model in a
+  nested map. This is useful when storing data in a SQL database
+  and you need to look up a relationship via SQL JOIN and then
+  extract that model after read.
+
+  E.g.
+  (extract-nested {:id 1
+                   :order-number \"001\"
+                   :customer-id 2
+                   :customer-name \"John Doe\"}
+                  :customer) => {:id 1
+                                 :order-number \"001\"
+                                 :customer-id 2
+                                 :customer {:id 2
+                                            :name \"John Doe\"}}"
+  [model base-key]
+  (let [prefix (str (name base-key) "-")
+        pattern (re-pattern (str "^" prefix))
+        nested-keys (->> (keys model)
+                         (map #(hash-map :k % :s (name %)))
+                         (filter #(string/starts-with? (:s %) prefix))
+                         (mapv #(assoc % :short-key (keyword
+                                                      (string/replace (:s %)
+                                                                      pattern
+                                                                      "")))))]
+    (if (and (= 1 (count nested-keys)))
+      model
+      (reduce (fn [inv {:keys  [k short-key]}]
+                (cond-> (assoc-in inv [base-key short-key] (k inv))
+                  (not= :id short-key) (dissoc k)))
+              model
+              nested-keys))))

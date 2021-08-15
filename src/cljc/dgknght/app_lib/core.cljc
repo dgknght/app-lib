@@ -216,3 +216,13 @@
     ([x a] (f (->sequential x) a))
     ([x a b] (f (->sequential x) a b))
     ([x a b & cs] (apply f (->sequential x) a b cs))))
+
+(defn fmin
+  "Given a function that returns a number, ensure that the result
+  is never less than the specified value"
+  [f minimum]
+  (fn [input]
+    (let [output (f input)]
+      (if (<= output minimum)
+        minimum
+        output))))
