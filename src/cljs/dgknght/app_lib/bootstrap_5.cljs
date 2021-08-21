@@ -10,17 +10,21 @@
 (derive ::bootstrap-5 ::bs-4/bootstrap-4)
 
 (defn nav-item
-  [{:keys [id path active? label nav-fn badge badge-class]
-    :or {path "#"}}]
-  ^{:key (str "nav-item-" (name id))}
-  [:li.nav-item
-   [:a.nav-link.d-flex.align-items-center (cond-> {:href path}
-                                            nav-fn (assoc :on-click nav-fn)
-                                            active? (assoc :class "active"
-                                                           :aria-current "page"))
-    (or label (title-case id))
-    (when badge
-      [:span.badge.ms-1 {:class badge-class} badge])]])
+  ([item] (nav-item item {}))
+  ([{:keys [id path active? label nav-fn badge badge-class]
+     :or {path "#"}}
+    {:keys [toggle]}]
+   ^{:key (str "nav-item-" (name id))}
+   [:li.nav-item
+    [:a.nav-link.d-flex.align-items-center (cond-> {:href path}
+                                             toggle (merge {:data-bs-toggle :collapse
+                                                            :data-bs-target toggle})
+                                             nav-fn (assoc :on-click nav-fn)
+                                             active? (assoc :class "active"
+                                                            :aria-current "page"))
+     (or label (title-case id))
+     (when badge
+       [:span.badge.ms-1 {:class badge-class} badge])]]))
 
 (defn navbar
   [items {:keys [brand brand-path profile-photo-url]}]
@@ -33,7 +37,7 @@
                              :aria-controls "primaryNav"
                              :aria-expanded false
                              :aria-label "Toggle Navigation"}
-     [:span.navbar-toggler-icon]]
+     (icons/icon :list)]
     (when (seq items)
       [:div#primaryNav.collapse.navbar-collapse
        [:ul.navbar-nav.me-auto.mb-2.mb-lg-0
@@ -79,20 +83,24 @@
                :aria-atomic true}
    [:div.toast-header
     [:strong.me-auto title]
-    [:button.btn-close {:aria-label "Close"
-                        :on-click #(notify/untoast id)}]]
+    [:button {:aria-label "Close"
+              :on-click #(notify/untoast id)}
+     (icons/icon :x)]]
    [:div.toast-body
     body]])
 
 (defn alert
   [{:keys [id severity message] :as a}]
   ^{:key (str "alert-" id)}
-  [:div.alert.alert-dismissible {:class (str "alert-" (name severity))
-                                 :role :alert}
-   message
-   [:button.btn-close {:type :button
-                       :on-click #(notify/unnotify a)
-                       :aria-label "Close"}]])
+  [:div.alert.d-flex.align-items-center
+   {:class (str "alert-" (name severity))
+    :role :alert}
+   [:span.me-auto.flex-grow-1 message]
+   [:button.btn {:type :button
+                 :class (str "text-" (name severity))
+                 :on-click #(notify/unnotify a)
+                 :aria-label "Close"}
+    (icons/icon :x)]])
 
 (defn icon-with-text
   ([icon-key text options]
