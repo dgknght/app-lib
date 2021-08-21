@@ -1,7 +1,8 @@
 (ns dgknght.app-lib.api
   (:refer-clojure :exclude [get])
   (:require-macros [cljs.core.async.macros :refer [go]])
-  (:require [cljs.core.async :refer [<!]]
+  (:require [clojure.string :as string]
+            [cljs.core.async :refer [<!]]
             [cljs-http.client :as http]
             [lambdaisland.uri :refer [map->query-string]]
             [goog.string :as gstr]
@@ -65,19 +66,20 @@
 
 (defn- extract-error
   [{:keys [body]}]
-  (or (some #(% body) [:dgknght.app-lib.validation/errors
-                       :error
-                       :message])
-      body))
+  (if-let [val-errors (:dgknght.app-lib.validation/errors body)]
+    (string/join ", " (-> val-errors vals flatten))
+    (or (some #(% body) [:error
+                         :message])
+        body)))
 
 (defn- respond
   [response action path success-fn error-fn]
   (if (success? response)
-           (-> response :body success-fn)
-           (-> response
-               (log-failure action path)
-               extract-error
-               error-fn)))
+    (-> response :body success-fn)
+    (-> response
+        (log-failure action path)
+        extract-error
+        error-fn)))
 
 (defn get
   ([path success-fn error-fn]

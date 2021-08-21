@@ -25,23 +25,23 @@
 
 (defn successf
   [message & args]
-  (notify (gstr/format message args) :success))
+  (notify (apply gstr/format message args) :success))
 
 (defn infof
   [message & args]
-  (notify (gstr/format message args) :info))
+  (notify (apply gstr/format message args) :info))
 
 (defn warningf
   [message & args]
-  (notify (gstr/format message args) :warning))
+  (notify (apply gstr/format message args) :warning))
 
 (defn warnf
   [message & args]
-  (notify (gstr/format message args) :warning))
+  (notify (apply gstr/format message args) :warning))
 
 (defn dangerf
   [message & args]
-  (notify (gstr/format message args) :danger))
+  (notify (apply gstr/format message args) :danger))
 
 (defn danger-fn
   [msg-format]

@@ -1,6 +1,7 @@
 (ns dgknght.app-lib.api
   (:refer-clojure :exclude [update])
   (:require [clojure.tools.logging :as log]
+            [clojure.string :as string]
             [ring.util.response :as res]
             [cheshire.generate :refer [add-encoder]]
             [dgknght.app-lib.authorization :as auth]
@@ -34,6 +35,11 @@
 
 (defn creation-response
   [model]
+  (when (v/has-error? model)
+    (log/debugf "Unable to save the model %s %s: %s"
+                (meta model)
+                model
+                (string/join ", " (v/flat-error-messages model))))
   (response model (if (and (map? model)
                            (v/has-error? model))
                     400
