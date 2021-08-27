@@ -182,7 +182,8 @@
 
 (defn safe-nth
   [col index]
-  (when (> (count col) index)
+  (when (and (not (nil? index))
+             (> (count col) index))
     (nth col index)))
 
 (defn mkstr

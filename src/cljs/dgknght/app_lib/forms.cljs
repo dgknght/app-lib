@@ -569,37 +569,35 @@
   ([model field items options]
    (select-elem model field items (assoc-in options [::decoration ::presentation] ::field))))
 
-(defn- assoc-select-item
+(defn- typeahead-select-item
   [{:keys [value-fn
            caption-fn
            on-change
-           create-fn
            items
            text-value
            model
-           field]
+           field
+           mode]
     :or {on-change identity
-         value-fn identity
-         create-fn (constantly nil)
-         caption-fn identity}
-    :as options}]
-  (assoc options
-         :select-item (fn [index]
-                        (let [item (if index
-                                     (lib/safe-nth @items index)
-                                     (create-fn @text-value))
-                              [value caption] (if item
-                                                ((juxt value-fn caption-fn) item)
-                                                [nil ""])]
-                          (reset! items nil)
-                          (swap! model
-                                 assoc-in
-                                 field
-                                 value)
-                          (reset! text-value caption)
-                          (on-change item)))))
+         caption-fn identity}}]
+  (fn [index]
+    (let [item (lib/safe-nth @items index)]
+      (reset! items nil)
+      (when item
+        (swap! model
+               assoc-in
+               field
+               (value-fn item))
+        (if (= :direct mode)
+          (reset! text-value (value-fn item))
+          (reset! text-value (caption-fn item)))
+        (on-change item)))))
 
-(defn- assoc-key-down
+(defn- assoc-select-item
+  [options]
+  (assoc options :select-item (typeahead-select-item options)))
+
+(defn- typeahead-key-down
   [{:keys [model
            field
            find-fn
@@ -609,45 +607,51 @@
            text-value
            select-item]
     :or {find-fn identity
-         caption-fn identity}
-    :as options}]
-  (assoc options
-         :handle-key-down
-         (fn [e]
-           (when @items
-             (case (html/key-code e)
-               :up           (swap! index #(-> (or % (count @items))
-                                               dec
-                                               (mod (count @items))))
-               :down         (swap! index #(-> (or % -1)
-                                               inc
-                                               (mod (count @items))))
-               (:enter :tab) (select-item @index)
-               :escape       (do
-                               (find-fn (get-in @model field)
-                                        #(reset! text-value (caption-fn %)))
-                               (reset! items nil))
-               nil)))))
+         caption-fn identity}}]
+  (fn [e]
+    (when @items
+      (case (html/key-code e)
+        :up           (swap! index #(-> (or % (count @items))
+                                        dec
+                                        (mod (count @items))))
+        :down         (swap! index #(-> (or % -1)
+                                        inc
+                                        (mod (count @items))))
+        (:enter :tab) (select-item @index)
+        :escape       (do
+                        (find-fn (get-in @model field)
+                                 #(reset! text-value (caption-fn %)))
+                        (reset! items nil))
+        nil))))
 
-(defn- assoc-handle-change
+(defn- assoc-key-down
+  [options]
+  (assoc options :handle-key-down (typeahead-key-down options)))
+
+(defn- typeahead-handle-change
   [{:keys [text-value
            items
            max-items
-           search-fn]
+           search-fn
+           model
+           field
+           mode]
     :or {max-items 10
-         search-fn identity}
-    :as options}]
-  (assoc options
-         :handle-change
-         (fn [e]
-           ; TODO: debounce this lookup
-           (let [raw-value (-> e html/target html/value)]
-             (reset! text-value raw-value)
-             (if (empty? raw-value)
-               (reset! items nil)
-               (search-fn raw-value #(->> %
-                                          (take max-items)
-                                          (reset! items))))))))
+         search-fn identity}}]
+  (fn [e]
+    (let [raw-value (-> e html/target html/value)]
+      (reset! text-value raw-value)
+      (when (= :direct mode)
+        (swap! model assoc-in field raw-value))
+      (if (empty? raw-value)
+        (reset! items nil)
+        (search-fn raw-value #(->> %
+                                   (take max-items)
+                                   (reset! items)))))))
+
+(defn- assoc-handle-change
+  [options]
+  (assoc options :handle-change (typeahead-handle-change options)))
 
 (defn- typeahead-list
   [{:keys [field
@@ -674,47 +678,60 @@
   (callback v))
 
 (defn- typeahead-state
-  [model field {:keys [caption-fn
+  [model field {:keys [mode
+                       caption-fn
                        list-caption-fn
+                       value-fn
                        find-fn]
+                :or {caption-fn identity}
                 :as options}]
+  {:pre [(or (nil? (:mode options))
+             (#{:direct :indirect} (:mode options)))]}
   (-> options
       (merge {:model model
               :field field
               :text-value (r/atom "")
               :items (r/atom nil)
               :index (r/atom nil)
-              ; This isn't quite the right solution, because caption-fn
-              ; is used on the results of search-fn and find-fn. If all
-              ; we're storing is a raw value (not a full model), then search-fn
-              ; will still be resolving the caption from a model, while find-fn
-              ; will be resolving the caption from a simple value.
-              ;
-              ; This is currently solved in the calling application like this:
-              ; :caption-fn #(or (:description %) %)
-              :caption-fn (or caption-fn
-                              identity)
+              :caption-fn caption-fn
+              :value-fn (or value-fn (if (= mode :direct)
+                                       #(get-in % field)
+                                       identity))
               :list-caption-fn (or list-caption-fn
-                                   caption-fn
-                                   identity)
+                                   caption-fn)
               :find-fn (or find-fn identity-callback)})
       (update-in [:html :id] (fnil identity (->id field)))
       assoc-select-item
       assoc-key-down
       assoc-handle-change))
 
+(defmulti ^:private handle-model-change
+  (fn [_ _ {:keys [mode]}] mode))
+
+(defmethod handle-model-change :default
+  [before after {:keys [field
+                        find-fn
+                        text-value
+                        caption-fn]}]
+  (when-not (get-in before field)
+    (when (not= (:id before) (:id after)) ; TODO: Making an assumption about the shape of the model here
+      (find-fn (get-in after field) #(reset! text-value (caption-fn %))))))
+
+(defmethod handle-model-change :direct
+  [_ after {:keys [field text-value]}]
+  (let [v-after (get-in after field)]
+    (reset! text-value v-after)))
+
 (defn- watch-typeahead-model
-  [{:keys [model field find-fn text-value caption-fn]}]
+  [{:keys [model field text-value index] :as options}]
   (add-watch model
-             field
-             (fn [_field _sender before after]
-               (let [v-before (get-in before field)
-                     v-after (get-in after field)]
-                 (if v-after
-                   (when (or (nil? v-before)
-                             (not= (:id before) (:id after)))
-                     (find-fn v-after #(reset! text-value (caption-fn %))))
-                   (reset! text-value ""))))))
+             ::typeahead
+             (fn [_ _ before after]
+               (if (get-in after field)
+                 (handle-model-change before after options)
+                 (do
+                   (reset! text-value "")
+                   (reset! index nil))))))
 
 (defn- set-typeahead-value
   [{:keys [model field find-fn text-value caption-fn]}]

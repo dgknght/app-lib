@@ -148,8 +148,11 @@
         "The contained sequence is pruned correctly")))
 
 (deftest safely-extract-from-list-at-position
-  (is (= :one (lib/safe-nth [:zero :one] 1)))
-  (is (nil? (lib/safe-nth [:zero :one] 2))))
+  (are [coll index expected] (= expected (lib/safe-nth coll index))
+       [:zero :one] 0 :zero
+       [:zero :one] 1 :one
+       [:zero :one] 2 nil
+       nil          0 nil))
 
 (deftest build-a-string
   (is (= "xxx" (lib/mkstr "x" 3))))

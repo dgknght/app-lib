@@ -9,25 +9,57 @@
 
 (derive ::bootstrap-5 ::bs-4/bootstrap-4)
 
-(defn nav-item
-  ([item] (nav-item item {}))
-  ([{:keys [id path active? label nav-fn badge badge-class]
-     :or {path "#"}}
-    {:keys [toggle]}]
-   ^{:key (str "nav-item-" (name id))}
-   [:li.nav-item
-    [:a.nav-link.d-flex.align-items-center (cond-> {:href path}
-                                             toggle (merge {:data-bs-toggle :collapse
-                                                            :data-bs-target toggle})
-                                             nav-fn (assoc :on-click nav-fn)
-                                             active? (assoc :class "active"
-                                                            :aria-current "page"))
-     (or label (title-case id))
-     (when badge
-       [:span.badge.ms-1 {:class badge-class} badge])]]))
+(defmulti ^:private nav-item
+  #(or (:role %)
+       (if (seq (:children %))
+         :dropdown
+         :default)))
+
+(defmethod ^:private nav-item :separator
+  [{:keys [id]}]
+  ^{:key (str "separator-" id)}
+  [:li [:hr.dropdown-divider {:role "separator"}]])
+
+(defmethod ^:private nav-item :dropdown
+  [{:keys [children id label active? tool-tip]}]
+  (let [id (str "menu-item-" id)]
+    ^{:key id}
+    [:li.nav-item.dropdown
+     [:a.nav-link.dropdown-toggle {:href "#"
+                                   :title tool-tip
+                                   :class [(when active? "active")]
+                                   :data-bs-toggle "dropdown"
+                                   :role "button"
+                                   :aria-expanded false
+                                   :aria-haspopup true}
+      label]
+     [:ul.dropdown-menu
+      (->> children
+           (map (comp nav-item
+                      #(assoc % :in-dropdown? true)))
+           doall)]]))
+
+(defmethod ^:private nav-item :default
+  [{:keys [id label path tool-tip active? nav-fn badge-class badge toggle in-dropdown?]
+    :or {path "#"}}]
+
+  ^{:key (str "menu-item-" id)}
+  [:li {:class (when-not in-dropdown? "nav-item") }
+   [:a.d-flex.align-items-center
+    (cond-> {:href path
+             :class (if in-dropdown? "dropdown-item" "nav-link")}
+      tool-tip (assoc :title tool-tip)
+      toggle (merge {:data-bs-toggle :collapse
+                     :data-bs-target toggle})
+      nav-fn (assoc :on-click nav-fn)
+      active? (assoc :class "active"
+                     :aria-current "page"))
+    (or label (title-case id))
+    (when badge
+      [:span.badge.ms-1 {:class badge-class} badge])]])
 
 (defn navbar
-  [items {:keys [brand brand-path profile-photo-url]}]
+  [items {:keys [brand brand-path profile-photo-url secondary-items]}]
   [:nav.navbar.navbar-expand-lg.navbar-light.bg-light
    [:div.container
     [:a.navbar-brand {:href brand-path} brand]
@@ -43,14 +75,17 @@
        [:ul.navbar-nav.me-auto.mb-2.mb-lg-0
         (->> items
              (map nav-item)
-             doall)]])
+             doall)]
+       (when (seq secondary-items)
+         [:ul.navbar-nav.mb-2.mb-lg-0
+          (->> secondary-items
+               (map nav-item)
+               doall)])])
     (when profile-photo-url
-      [:img {:class ["rounded-circle"
-                     "d-none"
-                     "d-lg-block"]
-             :src profile-photo-url
-             :style {:max-width "32px"}
-             :alt "Profile Photo"}])]])
+      [:img.rounded-circle.d-none.d-lg-block
+       {:src profile-photo-url
+        :style {:max-width "32px"}
+        :alt "Profile Photo"}])]])
 
 (def icon icons/icon)
 
@@ -83,8 +118,9 @@
                :aria-atomic true}
    [:div.toast-header
     [:strong.me-auto title]
-    [:button {:aria-label "Close"
-              :on-click #(notify/untoast id)}
+    [:button.btn.text-secondary
+     {:aria-label "Close"
+      :on-click #(notify/untoast id)}
      (icons/icon :x)]]
    [:div.toast-body
     body]])
@@ -103,10 +139,11 @@
     (icons/icon :x)]])
 
 (defn icon-with-text
-  ([icon-key text options]
+  ([icon-key text] (icon-with-text icon-key text {:size :small}))
+  ([icon-key text {:keys [size] :as options}]
    [:span.d-flex.align-items-center
     (if (= :spinner icon-key)
-      (spinner {:size :small})
+      (spinner {:size size})
       (icon icon-key options))
     [:span.ms-1
      text]]))
@@ -183,3 +220,38 @@
                                                                   ::forms/presentation ::forms/element}))
    (bs-4/decorate-typeahead-list list-elem)
    [:div.invalid-feedback (bs-4/invalid-feedback @model field)]])
+
+ (defn- nav-tab
+   [{:keys [active?
+            disabled?
+            hidden?
+            on-click
+            caption
+            elem-key]}]
+   ^{:key elem-key}
+   [:li.nav-item
+    [:a.nav-link {:href "#"
+                  :on-click on-click
+                  :class (cond
+                           active? "active"
+                           disabled? "disabled"
+                           hidden? "d-none")}
+     caption]])
+
+(defn nav-tabs
+   ([items]
+    (nav-tabs {} items))
+   ([options items]
+    [:ul.nav.nav-tabs options
+     (doall (map nav-tab items))]))
+
+(defn nav-pills
+  ([items]
+   (nav-pills {} items))
+  ([options items]
+   [:ul.nav.nav-pills options
+    (doall (map nav-tab items)) ]))
+
+(defn pagination
+  [state]
+  (bs-4/pagination state))
