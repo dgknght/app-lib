@@ -9,7 +9,7 @@
 
 (derive ::bootstrap-5 ::bs-4/bootstrap-4)
 
-(defmulti ^:private nav-item
+(defmulti nav-item
   #(or (:role %)
        (if (seq (:children %))
          :dropdown
