@@ -358,11 +358,13 @@
                      on-accept identity}
                 :as options}]
   (let [text-value (r/atom (unparse-fn (get-in @model field)))]
-    (add-watch model field (fn [_field _sender before after]
-                             (let [b (get-in before field)
-                                   a (get-in after field)]
-                               (when-not (equals-fn a b)
-                                 (reset! text-value (unparse-fn a))))))
+    (add-watch model
+               (cons ::specialized-text-input field)
+               (fn [_field _sender before after]
+                 (let [b (get-in before field)
+                       a (get-in after field)]
+                   (when-not (equals-fn a b)
+                     (reset! text-value (unparse-fn a))))))
     (fn []
       (let [attr (merge {:id (->id field)}
                         html
@@ -725,7 +727,7 @@
 (defn- watch-typeahead-model
   [{:keys [model field text-value index] :as options}]
   (add-watch model
-             ::typeahead
+             (cons ::typeahead field)
              (fn [_ _ before after]
                (if (get-in after field)
                  (handle-model-change before after options)
