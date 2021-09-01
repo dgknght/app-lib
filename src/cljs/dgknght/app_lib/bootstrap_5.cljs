@@ -106,9 +106,12 @@
   (spinner options))
 
 (defn init-toasts []
-  (let [ctor (. js/bootstrap -Toast)]
-    (doseq [elem (.querySelectorAll js/document "div.toast")]
-      (. (ctor. elem #js {}) show))))
+  (let [ctor (. js/bootstrap -Toast)
+        node-list (.querySelectorAll js/document "div.toast")
+        nodes (map #(.item node-list %)
+                   (range (.-length node-list)))]
+    (doseq [node nodes]
+      (. (ctor. node #js {}) show))))
 
 (defn toast
   [{:keys [title body id]}]
@@ -149,11 +152,13 @@
      text]]))
 
 (defn busy-button
-  [{:keys [html caption icon busy?]}]
+  [{:keys [html caption icon busy? disabled?]
+    :or {disabled? (atom false)}}]
   (fn []
     (if busy?
       [:button.btn (merge html
-                          {:disabled (boolean @busy?)})
+                          {:disabled (or (boolean @busy?)
+                                         @disabled?)})
        (cond
          (and icon caption)
          (icon-with-text (if @busy? :spinner icon)
@@ -162,7 +167,7 @@
 
          icon
          (if @busy?
-           (spinner {})
+           (spinner {:size :small})
            (icons/icon icon {:size :small}))
 
          :else
