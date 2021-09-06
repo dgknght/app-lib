@@ -630,6 +630,24 @@
   [options]
   (assoc options :handle-key-down (typeahead-key-down options)))
 
+(defn- typeahead-focus
+  [{:keys [model
+           field
+           search-fn
+           max-items
+           items
+           min-input-length]}]
+  (fn [_e]
+    (when (and (nil? (get-in @model field))
+               (zero? min-input-length))
+      (search-fn nil #(->> %
+                           (take max-items)
+                           (reset! items))))))
+
+(defn- assoc-handle-focus
+  [options]
+  (assoc options :handle-focus (typeahead-focus options)))
+
 (defn- typeahead-handle-change
   [{:keys [text-value
            items
@@ -638,8 +656,7 @@
            model
            field
            mode]
-    :or {max-items 10
-         search-fn identity}}]
+    :or {search-fn identity}}] ; TODO: Is this still the best default?
   (fn [e]
     (let [raw-value (-> e html/target html/value)]
       (reset! text-value raw-value)
@@ -687,10 +704,12 @@
                        find-fn]
                 :or {caption-fn identity}
                 :as options}]
-  {:pre [(or (nil? (:mode options))
-             (#{:direct :indirect} (:mode options)))]}
-  (-> options
-      (merge {:model model
+  {:pre [(contains? #{:direct :indirect nil}
+                    (:mode options))]}
+  (-> {:max-items 10
+       :min-input-length 1}
+      (merge options
+             {:model model
               :field field
               :text-value (r/atom "")
               :items (r/atom nil)
@@ -705,7 +724,8 @@
       (update-in [:html :id] (fnil identity (->id field)))
       assoc-select-item
       assoc-key-down
-      assoc-handle-change))
+      assoc-handle-change
+      assoc-handle-focus))
 
 (defmulti ^:private handle-model-change
   (fn [_ _ {:keys [mode]}] mode))
@@ -748,7 +768,8 @@
            html
            text-value
            handle-change
-           handle-key-down]
+           handle-key-down
+           handle-focus]
     {:keys [on-key-up]} :html}]
   [:input
    (merge {:id (->id field)}
@@ -761,7 +782,8 @@
            :on-key-up (when on-key-up
                         #(when-not @items
                            (on-key-up %)))
-           :on-change handle-change})])
+           :on-change handle-change
+           :on-focus handle-focus})])
 
 (defn typeahead-input
   "Renders an input field with typeahead search capability
