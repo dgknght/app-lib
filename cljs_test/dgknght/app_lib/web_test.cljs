@@ -1,7 +1,8 @@
 (ns dgknght.app-lib.web-test
-  (:require [clojure.test :refer [deftest is are]]
-            [clj-time.core :as t]
-            [clj-time.format :as tf]
+  (:require [cljs.test :refer [deftest is are]]
+            [cljs-time.core :as t]
+            [cljs-time.format :as tf]
+            [dgknght.app-lib.core :refer [trace]]
             [dgknght.app-lib.web :as web]))
 
 (deftest build-a-path
@@ -17,16 +18,17 @@
          (web/serialize-date (t/local-date 2019 3 2)))))
 
 (deftest unserialize-a-local-date
-  (is (= (t/local-date 2019 3 2)
-         (web/unserialize-date "2019-03-02"))))
+  (is (.equals (t/local-date 2019 3 2)
+               (web/unserialize-date "2019-03-02"))))
 
 (deftest serialize-a-date-time
   (is (= "2019-03-02T12:34:56Z"
          (web/serialize-date-time (t/date-time 2019 3 2 12 34 56)))))
 
 (deftest unserialize-a-date-time
-  (is (= (t/date-time 2019 3 2 12 34 56)
-         (web/unserialize-date-time "2019-03-02T12:34:56Z"))))
+  (let [expected (t/date-time 2019 3 2 12 34 56)
+        actual (web/unserialize-date-time "2019-03-02T12:34:56Z")]
+  (is (.equals expected actual))))
 
 (deftest format-a-date
   (let [date (t/local-date 2019 3 2)]
@@ -39,7 +41,7 @@
        date (tf/formatters :year-month) "2019-03")))
 
 (deftest format-a-date-time
-  (is (= "3/2/2019 12:34 PM" (web/format-date-time (t/date-time 2019 3 2 12 34 56))))
+  (is (= "3/2/2019 12:34 pm" (web/format-date-time (t/date-time 2019 3 2 12 34 56))))
   (is (= nil (web/format-date-time nil))))
 
 (deftest format-a-decimal

@@ -202,3 +202,11 @@
          1 0
          0 0
          -1 0)))
+
+(deftest increment-a-value-to-a-maximum
+  (let [f (lib/fmax inc 2)]
+    (are [input expected] (= expected (f input))
+         2 2
+         1 2
+         0 1
+         -1 0)))

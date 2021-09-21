@@ -77,10 +77,18 @@
 
 (def ^:private date-format (tf/formatter "M/d/yyyy"))
 
+(defn- resolve-formatter
+  [fmt]
+  (cond
+    (string? fmt) (tf/formatter fmt)
+    (keyword? fmt) (tf/formatters fmt)
+    :else fmt))
+
 (defn format-date
-  [date]
-  (when date
-    (tf/unparse-local-date date-format date)))
+  ([date] (format-date date date-format))
+  ([date fmt]
+   (when date
+     (tf/unparse-local-date (resolve-formatter fmt) date))))
 
 (defn unformat-date
   [date-string]

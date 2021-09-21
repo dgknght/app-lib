@@ -218,6 +218,16 @@
     ([x a b] (f (->sequential x) a b))
     ([x a b & cs] (apply f (->sequential x) a b cs))))
 
+(defn fmax
+  "Given a function that returns a number, ensure that the result
+  is never more than the specified value"
+  [f maximum]
+  (fn [input]
+    (let [output (f input)]
+      (if (>= output maximum)
+        maximum
+        output))))
+
 (defn fmin
   "Given a function that returns a number, ensure that the result
   is never less than the specified value"
