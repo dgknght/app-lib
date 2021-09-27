@@ -1,4 +1,4 @@
-(defproject com.github.dgknght/app-lib "0.1.21"
+(defproject com.github.dgknght/app-lib "0.1.22"
   :description "Library of commonly used functions for web app development"
   :url "https://github.com/dgknght/app-lib"
   :license {:name "EPL-2.0 OR GPL-2.0-or-later WITH Classpath-exception-2.0"

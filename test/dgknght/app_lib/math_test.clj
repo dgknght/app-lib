@@ -6,7 +6,8 @@
   (are [in e] (= (m/eval in) e)
        "1"      1M
        "1.05"   1.05M
-       " 1.05"  1.05M))
+       " 1.05"  1.05M
+       "-1.05"  -1.05M))
 
 (deftest evaluate-a-partial-statement
   (is (nil? (m/eval "1 +"))
