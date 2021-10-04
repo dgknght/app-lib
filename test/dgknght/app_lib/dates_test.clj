@@ -100,7 +100,6 @@
          {:transaction-date-after date}
 
          {:transaction-date [:between date other-date]}
-
          :transaction-date
          {:transaction-date-on-or-after date
           :transaction-date-on-or-before other-date}
