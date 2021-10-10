@@ -1,4 +1,4 @@
-(defproject com.github.dgknght/app-lib "0.1.22"
+(defproject com.github.dgknght/app-lib "0.1.23"
   :description "Library of commonly used functions for web app development"
   :url "https://github.com/dgknght/app-lib"
   :license {:name "EPL-2.0 OR GPL-2.0-or-later WITH Classpath-exception-2.0"
@@ -17,6 +17,7 @@
                  [lein-doo "0.1.11"]
                  [cljsjs/decimal "10.2.0-0"]
                  [lambdaisland/uri "1.4.54"]
+                 [clj-http "3.12.3"]
                  [cljs-http "0.1.45"]
                  [ring "1.9.0"]]
   :plugins [[lein-cljsbuild "1.1.8"]
