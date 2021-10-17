@@ -2,6 +2,7 @@
   (:require [stowaway.core :as storage]))
 
 (derive ::create ::manage)
+(derive ::index ::manage)
 (derive ::show ::manage)
 (derive ::update ::manage)
 (derive ::destroy ::manage)
