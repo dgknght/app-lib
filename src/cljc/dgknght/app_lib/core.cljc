@@ -22,8 +22,11 @@
 
 (defn parse-bool
   [value]
-  (when value
-    (contains? boolean-values (string/lower-case value))))
+  (when-not (nil? value)
+    (if (boolean? value)
+      value
+      (contains? boolean-values
+                 (string/lower-case value)))))
 
 (defn- parse-int*
   [v]

@@ -5,6 +5,8 @@
 
 (deftest parse-a-boolean
   (are [input expected] (= expected (lib/parse-bool input))
+       true    true
+       false   false
        "true"  true
        "True"  true
        "TRUE"  true
