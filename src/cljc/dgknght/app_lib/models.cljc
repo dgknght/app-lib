@@ -119,7 +119,7 @@
                                                       (string/replace (:s %)
                                                                       pattern
                                                                       "")))))]
-    (if (and (= 1 (count nested-keys)))
+    (if (= 1 (count nested-keys))
       model
       (reduce (fn [inv {:keys  [k short-key]}]
                 (cond-> (assoc-in inv [base-key short-key] (k inv))

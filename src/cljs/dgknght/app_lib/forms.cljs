@@ -382,11 +382,17 @@
                          :disabled (disabled-fn)
                          :name (->name field)
                          :value @text-value
+                         :on-blur (fn []
+                                    (when-let [new-value (get-in @model field)]
+                                      (let [formatted (unparse-fn new-value)]
+                                        (when-not (= formatted @text-value)
+                                          (reset! text-value (unparse-fn new-value))))))
                          :on-change (fn [e]
                                       (let [new-value (.-value (.-target e))
                                             parsed (try
                                                      (parse-fn new-value)
                                                      (catch js/Error e
+                                                       (.dir js/console e)
                                                        (.log js/console
                                                              (gstr/format "Error parsing \"%s\": (%s) %s"
                                                                           new-value
@@ -401,11 +407,35 @@
                                         (reset! text-value new-value)))})]
         (decorate [:input attr] model field options)))))
 
+(defn- parse-full-date
+  [date-string]
+  (when
+    (re-find #"^\d{1,2}/\d{1,2}/\d{4}$" date-string)
+    (tf/parse (tf/formatter "M/d/yyyy") date-string)))
+
+(defn- days-between
+  [& dates]
+  (t/in-days (apply t/interval (sort t/before? (take 2 dates)))))
+
+(defn- parse-month-day
+  [date-string]
+  (when-let [[_ month day] (re-find #"^(\d{1,2})/(\d{1,2})$" date-string)]
+    (let [today (t/today-at-midnight)
+          year (t/year today)]
+      (->> (range -1 2)
+           (map (comp #(t/local-date % month day)
+                      #(+ year %)))
+           (sort-by #(days-between today %))
+           first))))
+
+(def ^:private parse-date*
+  (some-fn parse-full-date
+           parse-month-day))
+
 (defn- parse-date
   [date-string]
-  (when (and date-string
-             (re-find #"^\d{1,2}/\d{1,2}/\d{4}$" date-string))
-    (tf/parse (tf/formatter "M/d/yyyy") date-string)))
+  (when date-string
+    (parse-date* date-string)))
 
 (defn- unparse-date
   [date]

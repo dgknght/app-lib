@@ -124,6 +124,6 @@
 
 (defn eval
   [input]
-  (->> (re-seq #"-?\d+(?:\.\d+)?|[)(*+/-]" input)
+  (->> (re-seq #"-?0?\.\d+|-?\d+(?:\.\d+)?|[)(*+/-]" input)
        nest-parens
        eval*))
