@@ -68,3 +68,29 @@
               "end-of-previous-year"    "2019-12-31"
               "start-of-previous-month" "2020-02-01"
               "end-of-previous-month"   "2020-02-29")))
+
+(deftest get-the-earliest-date
+  (let [d1 (t/local-date 2021 1 1)
+        d2 (t/local-date 2021 1 2)
+        d3 (t/local-date 2021 2 1)]
+    (is (= d1 (dates/earliest d2 d3 d1))
+        "The earliest of many is returned")
+    (is (= d2 (dates/earliest d2))
+        "A single date is returned")
+    (is (= d2 (dates/earliest d2 nil))
+        "Nil values are ignored")
+    (is (nil? (dates/earliest))
+        "No values returns nil")))
+
+(deftest get-the-latest-date
+  (let [d1 (t/local-date 2021 1 1)
+        d2 (t/local-date 2021 1 2)
+        d3 (t/local-date 2021 2 1)]
+    (is (= d3 (dates/latest d2 d3 d1))
+        "The latest of many is returned")
+    (is (= d2 (dates/latest d2))
+        "A single date is returned")
+    (is (= d2 (dates/latest nil d2))
+        "nil is ignored")
+    (is (nil? (dates/latest))
+        "No dates yields nil")))

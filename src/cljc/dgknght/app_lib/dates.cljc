@@ -6,14 +6,14 @@
             #?(:clj [clj-time.periodic :refer [periodic-seq]]
                :cljs [cljs-time.periodic :refer [periodic-seq]])
             [clojure.string :as string]
-            [dgknght.app-lib.core :refer [parse-int]]))
+            [dgknght.app-lib.core :as lib]))
 
 (defn- parse-partial
   [value]
   (->> (re-matches #"(\d{4})(?:-(\d{2})(?:-(\d{2}))?)?"
                                           value)
                               rest
-                              (map parse-int)))
+                              (map lib/parse-int)))
 
 (defn parse-range
   "Accepts a date range in a variety of formats and returns
@@ -243,3 +243,17 @@
         :update-fn (fn [result str-k k value]
                      (let [[new-key value-with-oper] (symbolic-key str-k k value)]
                        (assoc result new-key value-with-oper)))})))
+
+(defn earliest
+  [& dates]
+  (->> dates
+       (filter identity)
+       (sort t/before?)
+       first))
+
+(defn latest
+  [& dates]
+  (->> dates
+       (filter identity)
+       (sort t/after?)
+       first))
