@@ -130,13 +130,17 @@
 
 (defn- number-format
   [fmt]
+  {:pre [(#{:decimal :percent :currency} fmt)]}
+
   #?(:clj (doto (case fmt
                   :decimal (DecimalFormat.)
-                  :percent (NumberFormat/getPercentInstance))
+                  :percent (NumberFormat/getPercentInstance)
+                  :currency (NumberFormat/getCurrencyInstance))
             (.setGroupingUsed true))
      :cljs (NumberFormat. (case fmt
-                            :decimal (.-DECIMAL (.-Format NumberFormat))
-                            :percent (.-PERCENT (.-Format NumberFormat))))))
+                            :decimal  (.-DECIMAL  (.-Format NumberFormat))
+                            :percent  (.-PERCENT  (.-Format NumberFormat))
+                            :currency (.-CURRENCY (.-Format NumberFormat))))))
 
 (defn format-decimal
   ([value] (format-decimal value {}))
@@ -155,3 +159,10 @@
               (.setMaximumFractionDigits fraction-digits)
               (.setMinimumFractionDigits fraction-digits))
             value)))
+
+(defn format-currency
+  [value]
+  (.format (doto (number-format :currency)
+              (.setMaximumFractionDigits 2)
+              (.setMinimumFractionDigits 2))
+            value))

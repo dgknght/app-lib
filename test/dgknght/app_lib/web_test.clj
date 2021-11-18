@@ -48,3 +48,6 @@
 
 (deftest format-a-percent
   (is (= "25.4%" (web/format-percent 0.254M))))
+
+(deftest format-a-currency
+  (is (= "$12.34" (web/format-currency 12.34M))))

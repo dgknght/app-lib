@@ -2,7 +2,6 @@
   (:require [cljs.test :refer [deftest is are]]
             [cljs-time.core :as t]
             [cljs-time.format :as tf]
-            [dgknght.app-lib.core :refer [trace]]
             [dgknght.app-lib.web :as web]))
 
 (deftest build-a-path
@@ -50,3 +49,6 @@
 
 (deftest format-a-percent
   (is (= "25.4%" (web/format-percent 0.254M))))
+
+(deftest format-a-currency
+  (is (= "$12.34" (web/format-currency 12.34M))))
