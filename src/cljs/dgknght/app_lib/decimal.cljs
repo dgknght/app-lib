@@ -34,13 +34,12 @@
     (.isZero (->decimal value))))
 
 (defn +
-  [v1 v2]
-  (cond
-    (and (nil? v1)
-         (nil? v2)) nil
-    (nil? v1)       v2
-    (nil? v2)       v1
-    :else           (.plus (->decimal v1) v2)))
+  [& vs]
+  (when (not-every? nil? vs)
+    (->> vs
+         (filter identity)
+         (map ->decimal)
+         (reduce #(.plus %1 %2) (zero)))))
 
 (defn -
   [v1 v2]
@@ -69,4 +68,5 @@
 
 (defn round
   [d]
-  (.round d))
+  (when d
+    (.round d)))
