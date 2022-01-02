@@ -145,6 +145,10 @@
       (seq v)
       v)))
 
+(defn presence
+  [v]
+  (when (present? v) v))
+
 (defn index-by
   [key-fn coll]
   {:pre [(sequential? coll)]}

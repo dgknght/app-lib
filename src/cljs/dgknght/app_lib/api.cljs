@@ -4,8 +4,11 @@
   (:require [clojure.string :as string]
             [cljs.core.async :refer [<!]]
             [cljs-http.client :as http]
+            [camel-snake-kebab.core :refer [->kebab-case-keyword]]
+            [camel-snake-kebab.extras :refer [transform-keys]]
             [lambdaisland.uri :refer [map->query-string]]
             [goog.string :as gstr]
+            [dgknght.app-lib.core :refer [present?]]
             [dgknght.app-lib.web :as web]))
 
 (defonce defaults (atom {}))
@@ -29,7 +32,7 @@
   [& segments]
   (apply web/path (concat [:api] segments)))
 
-(defn- append-query-string
+(defn append-query-string
   [path criteria]
   (if (empty? criteria)
     path
@@ -64,13 +67,30 @@
        (accept "application/json")
        (merge @defaults options))))
 
-(defn- extract-error
-  [{:keys [body]}]
-  (if-let [val-errors (:dgknght.app-lib.validation/errors body)]
-    (string/join ", " (-> val-errors vals flatten))
-    (or (some #(% body) [:error
-                         :message])
-        body)))
+(defn parse-json
+  [json]
+  (transform-keys ->kebab-case-keyword
+                  (js->clj (.parse js/JSON json))))
+
+(def ^:private error-map
+  {404 "not found"
+   403 "forbidden"
+   401 "unauthorized"
+   400 "bad request"
+   500 "server error"})
+
+(defn extract-error
+  [{:keys [body status]}]
+  (if-let [parsed (when (present? body)
+                    (if (string? body)
+                      (parse-json body)
+                      body))]
+    (if-let [val-errors (:dgknght.app-lib.validation/errors parsed)]
+      (string/join ", " (-> val-errors vals flatten))
+      (or (some #(% parsed) [:error
+                             :message])
+          body))
+    (get-in error-map [status] (str "Unknown error: " status))))
 
 (defn- respond
   [response action path success-fn error-fn]
