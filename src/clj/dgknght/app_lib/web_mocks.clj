@@ -111,3 +111,23 @@
                    :actual matches#
                    :message ~msg
                    :type (if pass?# :pass :fail)}))))
+
+(defn matches-headers?
+  [{:keys [headers]} expected]
+  (every? (fn [[k v]]
+            (= v (get-in headers [k])))
+          expected))
+
+(defmethod assert-expr 'called-with-headers?
+  [msg form]
+  (let [expected (safe-nth form 1)
+        spec (safe-nth form 2)
+        calls (safe-nth form 3)]
+    `(let [matches# (filter #(matches-headers? % ~expected) (deref ~calls))
+           pass?# (meets-spec? (count matches#) ~spec)]
+       (do-report {:expected {:headers ~expected
+                              :spec ~spec}
+                   :actual {:matches (count matches#)
+                            :calls (deref ~calls)}
+                   :message ~msg
+                   :type (if pass?# :pass :fail)}))))
