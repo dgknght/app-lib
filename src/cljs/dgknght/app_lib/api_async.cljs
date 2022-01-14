@@ -15,25 +15,26 @@
           (throw (js/Error. (api/extract-error %))))))
 
 (defn- build-xf
-  [{:keys [transform handle-ex]}]
-  (let [err-xf (if handle-ex
-                 throw-on-non-success
-                 extract-error)
-        custom (cond
-                 (nil? transform) []
-                 (sequential? transform) transform
-                 :else [transform])]
-    (apply comp err-xf (concat custom))))
+  [{:keys [transform handle-ex extract-body]}]
+  (let [extract (map (fn [{:keys [body] :as res}]
+                       (or body res))) ; ensure we don't put nil on the channel
+        xfs (cond-> [(if handle-ex
+                       throw-on-non-success
+                       extract-error)]
+              (#{true :before} extract-body) (conj extract)
+              (sequential? transform)        (concat transform)
+              transform                      (conj transform)
+              (= :after extract-body)        (conj extract))]
+    (apply comp xfs)))
 
 (defn request
   [options]
   {:pre [(map? options)]}
 
-  (-> @api/defaults
-      (merge options)
-      (assoc :channel (a/chan 1
-                              (build-xf options)
-                              (:handle-ex options)))))
+  (let [opts (merge @api/defaults options)]
+    (assoc opts :channel (a/chan 1
+                                 (build-xf opts)
+                                 (:handle-ex opts)))))
 
 (defn get
   ([path] (get path {}))
@@ -60,3 +61,46 @@
   ([path] (delete path {}))
   ([path options]
    (http/delete path (request options))))
+
+(defn path
+  [& segments]
+  (apply api/path segments))
+
+(defn multipart-params
+  [req params]
+  (assoc req :multipart-params params))
+
+(defn apply-fn
+  "Given a function that accepts a single argument, returns a transducing
+  function that applies the given function either to each value as a whole,
+  or each element of each values if the value is sequential.
+
+  This would be appropriate for use with option {:extract-body :before}"
+  [f]
+  (fn [xf]
+    (completing
+      (fn [ch v]
+        (xf ch
+            (if (sequential? v)
+              (map f v)
+              (f v)))))))
+
+(defn apply-body-fn
+  "Given a function that accepts a single argument, returns a transducing
+  function that applies the given function either to the body of a
+  response map or to each element in the body of the response map if the
+  body is sequential.
+
+  This would be appropriate for option {:extract-body :after} or without
+  the :extract-body option."
+  [f]
+  (fn [xf]
+    (completing
+      (fn [ch res]
+        (xf ch
+            (update-in res
+                       [:body]
+                       (fn [b]
+                         (if (sequential? b)
+                           (map f b)
+                           (f b)))))))))

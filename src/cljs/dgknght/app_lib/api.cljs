@@ -15,8 +15,7 @@
 
 (defn- success?
   [{:keys [status]}]
-  (and (<= 200 status)
-       (> 300 status)))
+  (<= 200 status 299))
 
 (defn- log-failure
   [response action model]
