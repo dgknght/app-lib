@@ -2,4 +2,5 @@
                                                            invalid?
                                                            comparable?
                                                            url-like?
-                                                           not-url-like?])]}}}
+                                                           not-url-like?])
+                                         (cljs.test/is [comparable?])]}}}

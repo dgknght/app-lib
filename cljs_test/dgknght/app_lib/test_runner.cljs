@@ -1,6 +1,7 @@
 (ns dgknght.app-lib.test-runner
   (:require [doo.runner :refer-macros [doo-tests]]
             dgknght.app-lib.api-async-test
+            dgknght.app-lib.test-test
             dgknght.app-lib.core-test
             dgknght.app-lib.decimal-test
             dgknght.app-lib.dates-test
@@ -12,6 +13,7 @@
             dgknght.app-lib.busy-test))
 
 (doo-tests 'dgknght.app-lib.core-test
+           'dgknght.app-lib.test-test
            'dgknght.app-lib.decimal-test
            'dgknght.app-lib.dates-test
            'dgknght.app-lib.math-test

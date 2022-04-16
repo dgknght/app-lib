@@ -70,3 +70,8 @@
   [d]
   (when d
     (.round d)))
+
+(defn set-scale
+  [d scale]
+  (when d
+    (.toDP d scale Decimal/ROUND_HALF_UP)))

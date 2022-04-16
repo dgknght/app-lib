@@ -15,7 +15,8 @@
                                           update-in-if]]
             [dgknght.app-lib.models :as models]
             [dgknght.app-lib.validation])
-  (:import java.io.StringWriter))
+  (:import java.io.StringWriter
+           com.fasterxml.jackson.core.JsonParseException))
 
 (defn parse-html-body
   [{:keys [body html-body] :as response}]
@@ -30,7 +31,10 @@
 
   (if json-body
     response
-    (assoc response :json-body (json/parse-string body true))))
+    (try
+      (assoc response :json-body (json/parse-string body true))
+      (catch JsonParseException e
+        (assoc response :json-body {:parse-error (.getMessage e)})))))
 
 (defn report-msg
   [& msgs]

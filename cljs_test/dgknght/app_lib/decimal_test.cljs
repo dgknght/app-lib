@@ -79,3 +79,14 @@
        1                  false
        1.0                false
        "1"                false))
+
+(deftest set-the-scale
+  (are [scale e]
+       (let [result (str (d/set-scale (d// (d/->decimal 2)
+                                           (d/->decimal 3))
+                                      scale))]
+         (= e result))
+       3 "0.667"
+       2 "0.67"
+       1 "0.7"
+       0 "1"))

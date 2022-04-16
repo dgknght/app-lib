@@ -31,7 +31,8 @@
 (deftest compare-maps
   (is (comparable? {:one 1}
                    {:one 1
-                    :two 2})))
+                    :two 2})
+      "A map compared to an expectation that is a subset of the map succeeds"))
 
 (deftest get-a-set-from-an-attribute
   (is (= #{"One" "Two" "Three"}

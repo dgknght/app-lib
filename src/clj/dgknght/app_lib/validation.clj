@@ -99,6 +99,7 @@
                                   'clojure.core/integer? "%s must be an integer"
                                   'clojure.core/decimal? "%s must be a number"
                                   'clojure.core/vector? "%s must be a list of values"
+                                  'clojure.core/coll? "%s must be a list of values"
                                   'decimal? "%s must be a number"
                                   'dgknght.app-lib.core/present? "%s is required"
                                   'dgknght.app-lib.validation/non-empty-string? "%s is required"
