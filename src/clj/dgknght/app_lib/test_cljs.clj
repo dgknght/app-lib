@@ -1,13 +1,12 @@
 (ns dgknght.app-lib.test-cljs
   (:require [cljs.test :as t]
             [clojure.data :as d]
-            [dgknght.app-lib.core :refer [safe-nth
-                                          prune-to]]))
+            [dgknght.app-lib.core :refer [prune-to]]))
 
 (defmethod t/assert-expr 'comparable?
   [_menv msg form]
-  (let [expected (safe-nth form 1)
-        actual (safe-nth form 2)
+  (let [expected (nth form 1)
+        actual (nth form 2)
         ks (->> form
                 (drop 3)
                 (into []))]

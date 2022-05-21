@@ -2,5 +2,7 @@
                                                            invalid?
                                                            comparable?
                                                            url-like?
-                                                           not-url-like?])
-                                         (cljs.test/is [comparable?])]}}}
+                                                           not-url-like?
+                                                           called?])
+                                         (cljs.test/is [comparable?])
+                                         (dgknght.app-lib.web-mocks/with-web-mocks [calls])]}}}

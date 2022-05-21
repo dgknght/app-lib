@@ -1,11 +1,17 @@
 (ns dgknght.app-lib.core
-  (:refer-clojure :exclude [uuid decimal?])
+  (:refer-clojure :exclude [uuid decimal? format])
   (:require [clojure.string :as string]
             [clojure.walk]
             #?(:clj [clojure.core :as cc])
             #?(:clj [clojure.pprint :refer [pprint]])
+            #?(:cljs [goog.string :as gstr])
             #?(:cljs [dgknght.app-lib.decimal :as d]))
   #?(:clj (:import java.util.UUID)))
+
+(defn format
+  [msg & args]
+  #?(:clj (apply clojure.core/format msg args)
+     :cljs (apply gstr/format msg args)))
 
 (defn trace
   [msg]
@@ -244,3 +250,8 @@
       (if (<= output minimum)
         minimum
         output))))
+
+(defn derefable?
+  [x]
+  #?(:cljs (satisfies? IDeref x)
+     :clj (instance? clojure.lang.IDeref x)))

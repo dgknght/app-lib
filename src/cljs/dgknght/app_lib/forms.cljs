@@ -23,10 +23,6 @@
 (derive ::select ::text)
 (derive ::textarea ::text)
 
-(defn- derefable?
-  [x]
-  (satisfies? cljs.core/IDeref x))
-
 (defn ->id
   [field]
   (->> field
@@ -179,7 +175,7 @@
    (merge {} container-html)
    (checkbox-inputs* model
                      field
-                     (if (derefable? items)
+                     (if (lib/derefable? items)
                        @items
                        items)
                      options)])
@@ -590,7 +586,7 @@
                                                nil
                                                (transform-fn value)))
                                       (on-change model field)))})
-       (->> (if (derefable? items)
+       (->> (if (lib/derefable? items)
               @items
               items)
             (map #(select-option % field))
