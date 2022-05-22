@@ -70,3 +70,21 @@
   (case spec
     :once (= 1 match-count)
     (throw (ex-info (lib/format "Unrecognized call spec %s" spec) {:spec spec}))) )
+
+(defmulti readable dispatch-matcher)
+
+(defmethod readable :pattern
+  [matcher]
+  (str "request with url matching \"" matcher "\""))
+
+(defmethod readable :string
+  [matcher]
+  (str "request with url \"" matcher "\""))
+
+(defmethod readable :map
+  [matcher]
+  (str "request with attributes " (prn-str matcher)))
+
+(defmethod readable :fn
+  [_matcher]
+  "request matching predicate fn")

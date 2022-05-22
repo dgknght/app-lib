@@ -12,7 +12,7 @@
      [f & args]
      (apply gstr/format f args)))
 
-(defn- parse-query-string
+(defn parse-query-string
   [{:keys [query-string] :as m}]
   (if query-string
     (assoc m :query-params (query-string->map query-string))
@@ -27,19 +27,13 @@
       (println "Unable to match the request: " (prn-str req))
       (println "Mocks " (prn-str mocks))))
 
-(defn- generate-res
-  [req mocks]
-  (-> req
-      parse-query-string
-      (call-matching-mock mocks)))
-
 (defn request-handler
   [calls mocks]
   (fn [req]
     (swap! calls conj req)
-    #?(:clj (generate-res req mocks)
+    #?(:clj (call-matching-mock req mocks)
        :cljs (let [ch (:channel req)
-                   res (generate-res req mocks)]
+                   res (call-matching-mock req mocks)]
                (when res
                  (a/put! ch res))
                (a/close! ch)
@@ -49,7 +43,8 @@
   [bindings mocks-map & body]
   `(let [f# (fn* [~(first bindings)] ~@body)
          calls# (atom [])]
-     (with-redefs [http/request (request-handler calls# ~mocks-map)]
+     (with-redefs [http/request (comp (request-handler calls# ~mocks-map)
+                                      parse-query-string)]
        (f# calls#))))
 
 #?(:clj

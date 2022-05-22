@@ -2,7 +2,8 @@
   (:require [clojure.test :as test]
             [dgknght.app-lib.core :as lib]
             [dgknght.app-lib.web-mocks.matching :refer [match?
-                                                        meets-spec?]]))
+                                                        meets-spec?
+                                                        readable]]))
 
 (defn called?
   [msg form]
@@ -13,7 +14,7 @@
            matches# (filter #(match? % ~matcher) calls#)
            pass?# (meets-spec? (count matches#) ~spec)]
        ; TODO: this renders a readable error in clojurescript test results, but not in clojure test results
-       {:expected (lib/format "%s called %s" ~matcher ~spec)
+       {:expected (lib/format "%s called %s" (readable ~matcher) ~spec)
         :actual (lib/format "Found %s match(es) among %s"
                             (count matches#)
                             (mapv #(dissoc % :channel) calls#))
