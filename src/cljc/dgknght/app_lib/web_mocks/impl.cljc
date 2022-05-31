@@ -1,6 +1,5 @@
 (ns dgknght.app-lib.web-mocks.impl
-  (:require [clojure.test :as test]
-            [dgknght.app-lib.core :as lib]
+  (:require [dgknght.app-lib.core :as lib]
             [dgknght.app-lib.web-mocks.matching :refer [match?
                                                         meets-spec?
                                                         readable]]))
@@ -27,10 +26,10 @@
         matcher (lib/safe-nth form 2)]
     `(let [matches# (filter #(match? % ~matcher) (deref ~calls))
            pass?# (empty? matches#)]
-       (test/report {:expected "no matching calls"
-                     :actual matches#
-                     :message ~msg
-                     :type (if pass?# :pass :fail)}))))
+       {:expected "no matching calls"
+        :actual matches#
+        :message ~msg
+        :type (if pass?# :pass :fail)})))
 
 (defn matches-headers?
   [{:keys [headers]} expected]

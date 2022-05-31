@@ -69,6 +69,7 @@
   [match-count spec]
   (case spec
     :once (= 1 match-count)
+    :twice (= 2 match-count)
     (throw (ex-info (lib/format "Unrecognized call spec %s" spec) {:spec spec}))) )
 
 (defmulti readable dispatch-matcher)
