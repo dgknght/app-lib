@@ -7,7 +7,10 @@
 (def ^:private extract-error
   (map #(if (:success %)
           %
-          (assoc % ::error (api/extract-error %)))))
+          (assoc % ::error (try
+                             (api/extract-error %)
+                             (catch js/Error _e
+                               "Unable to parse the body as JSON"))))))
 
 (def ^:private throw-on-non-success
   (map #(if (:success %)
