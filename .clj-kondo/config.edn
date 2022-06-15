@@ -3,6 +3,25 @@
                                                            comparable?
                                                            url-like?
                                                            not-url-like?
-                                                           called?])
+                                                           called?
+                                                           seq-of-maps-like?
+                                                           seq-with-map-like?
+                                                           seq-with-no-map-like?
+                                                           seq-containing-value?
+                                                           seq-excluding-value?
+                                                           seq-containing-model?
+                                                           seq-excluding-model?
+                                                           http-success?
+                                                           http-created?
+                                                           http-no-content?
+                                                           http-bad-request?
+                                                           http-unauthorized?
+                                                           http-forbidden?
+                                                           http-not-found?
+                                                           http-teapot?
+                                                           http-unprocessable?
+                                                           mime-msg-containing?
+                                                           http-response-with-cookie?
+                                                           http-response-without-cookie?])
                                          (cljs.test/is [comparable?])
                                          (dgknght.app-lib.web-mocks/with-web-mocks [calls])]}}}

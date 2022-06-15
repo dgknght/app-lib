@@ -1,6 +1,6 @@
 (ns dgknght.app-lib.api-test
   (:require [clojure.test :refer [deftest is]]
-            [dgknght.app-lib.test]
+            [dgknght.app-lib.test-assertions]
             [dgknght.app-lib.validation :as v]
             [dgknght.app-lib.api :as api]))
 

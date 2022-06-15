@@ -55,7 +55,7 @@
                                  notifications))))
 
 (declare sweep-toasts)
-(defn- queue-toast-sweep []
+(defn queue-toast-sweep []
   (.setTimeout js/window sweep-toasts toast-sweep-interval))
 
 (defn toast

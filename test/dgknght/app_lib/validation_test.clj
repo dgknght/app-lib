@@ -3,7 +3,7 @@
             [clojure.spec.alpha :as s]
             [clojure.string :as string]
             [dgknght.app-lib.web :refer [email-pattern]]
-            [dgknght.app-lib.test]
+            [dgknght.app-lib.test-assertions]
             [dgknght.app-lib.validation :as v]))
 
 (def present? (every-pred string? seq))
