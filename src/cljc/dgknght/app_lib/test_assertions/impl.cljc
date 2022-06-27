@@ -5,6 +5,10 @@
             #?(:clj [clojure.data.zip.xml :refer [xml1->]])
             #?(:clj [clojure.zip :refer [xml-zip]])
             #?(:clj [clojure.pprint :refer [pprint]])
+            #?(:clj [clj-time.format :as tf]
+               :cljs [cljs-time.format :as tf])
+            #?(:clj [clj-time.coerce :refer [to-date-time]]
+               :cljs [cljs-time.coerce :refer [to-date-time]])
             [lambdaisland.uri :refer [uri
                                       query-string->map]]
             #?(:cljs [goog.string])
@@ -368,6 +372,22 @@
                                  :html-body
                                  xml-zip)))]
           {:type (if match# :pass :fail)
-           :message (report-msg ~msg (fmt "Did not find the expected html content."))
+           :message (report-msg ~msg "Did not find the expected html content.")
            :expected ~predicates
            :actual "not found"}))))
+
+(defn format-comparable-date
+  [d]
+  (tf/unparse (tf/formatters :date) (to-date-time d)))
+
+#?(:clj
+   (defn same-date?
+     [msg form]
+     (let [expected (safe-nth form 1)
+           actual (safe-nth form 2)]
+       `(let [expected# (format-comparable-date ~expected)
+              actual# (format-comparable-date ~actual)]
+          {:type (if (= expected# actual#) :pass :fail)
+           :message (report-msg ~msg (fmt "Expected \"%s\", but found \"%s\"" expected# actual#))
+           :expected expected#
+           :actual actual#}))))

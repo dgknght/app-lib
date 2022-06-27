@@ -22,6 +22,7 @@
                                                            http-unprocessable?
                                                            mime-msg-containing?
                                                            http-response-with-cookie?
-                                                           http-response-without-cookie?])
+                                                           http-response-without-cookie?
+                                                           same-date?])
                                          (cljs.test/is [comparable?])
                                          (dgknght.app-lib.web-mocks/with-web-mocks [calls])]}}}

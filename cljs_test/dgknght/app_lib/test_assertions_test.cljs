@@ -1,5 +1,6 @@
 (ns dgknght.app-lib.test-assertions-test
   (:require [cljs.test :refer [deftest is]]
+            [cljs-time.core :as t]
             [dgknght.app-lib.test-assertions]))
 
 (deftest assert-comparability
@@ -162,4 +163,8 @@
         "user-id"
         http-response)))
 
-
+(deftest assert-same-date
+  (is (dgknght.app-lib.test-assertions/same-date?
+        (t/local-date 2000 3 2)
+        (t/local-date 2000 3 2))
+      "Two local-date instances initialized with the same values are the same"))

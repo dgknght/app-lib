@@ -1,5 +1,6 @@
 (ns dgknght.app-lib.test-assertions-test
   (:require [clojure.test :refer [deftest is]]
+            [clj-time.core :as t]
             [dgknght.app-lib.test-assertions]))
 
 (deftest assert-comparability
@@ -130,3 +131,8 @@
 (deftest assert-http-response-with-cookie
   (is (http-response-with-cookie?  "session-id" "abc123" http-response))
   (is (http-response-without-cookie?  "user-id" http-response)))
+
+(deftest assert-same-date
+  (is (same-date? (t/local-date 2000 3 2)
+                  (t/local-date 2000 3 2))
+      "Two local-date instances initialized with the same values are the same"))

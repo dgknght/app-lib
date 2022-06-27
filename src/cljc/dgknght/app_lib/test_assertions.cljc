@@ -309,3 +309,9 @@
      [msg form]
      `(test/report
         ~(impl/html-response-with-content? msg form))))
+
+#?(:clj
+   (defmethod test/assert-expr 'same-date?
+     [msg form]
+     `(test/report
+        ~(impl/same-date? msg form))))
