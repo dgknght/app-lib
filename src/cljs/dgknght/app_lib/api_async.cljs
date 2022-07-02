@@ -4,31 +4,35 @@
             [cljs.core.async :as a]
             [dgknght.app-lib.api :as api]))
 
-(def ^:private extract-error
-  (map #(if (:success %)
-          %
-          (assoc % ::error (try
-                             (api/extract-error %)
-                             (catch js/Error _e
-                               "Unable to parse the body as JSON"))))))
+(defn- extract-error
+  [m]
+  (if (:success m)
+    m
+    (let [error (try
+                  (api/extract-error m)
+                  (catch js/Error _e
+                    "Unable to parse the body as JSON"))]
+      (assoc m ::error error))))
 
-(def ^:private throw-on-non-success
-  (map #(if (:success %)
-          %
-          (throw (js/Error. (api/extract-error %))))))
+(defn- extract-res-body
+  [{:keys [body] :as res}]
+  (or body res)) ; ensure we don't put nil on the channel
+
+(defn- throw-on-non-success
+  [m]
+  (when-let [error (::error m)]
+    (throw error))
+  m)
 
 (defn- build-xf
   [{:keys [transform handle-ex extract-body]}]
-  (let [extract (map (fn [{:keys [body] :as res}]
-                       (or body res))) ; ensure we don't put nil on the channel
-        xfs (cond-> [(if handle-ex
-                       throw-on-non-success
-                       extract-error)]
-              (#{true :before} extract-body) (conj extract)
-              (sequential? transform)        (concat transform)
-              transform                      (conj transform)
-              (= :after extract-body)        (conj extract))]
-    (apply comp xfs)))
+  (apply comp
+         (cond-> [(map extract-error)]
+           handle-ex                      (conj (map throw-on-non-success))
+           (#{true :before} extract-body) (conj (map extract-res-body))
+           (sequential? transform)        (concat transform)
+           transform                      (conj transform)
+           (= :after extract-body)        (conj (map extract-res-body)))))
 
 (defn request
   [options]

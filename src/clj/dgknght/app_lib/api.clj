@@ -92,6 +92,8 @@
 (defn- error-response
   [error]
   (log/errorf error "Unexpected error handling request")
+  (doseq [f (.getStackTrace error)]
+    (log/error (.toString f)))
   internal-server-error)
 
 (defn wrap-api-exception
