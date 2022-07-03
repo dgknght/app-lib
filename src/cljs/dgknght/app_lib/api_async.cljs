@@ -21,7 +21,7 @@
 (defn- throw-on-non-success
   [m]
   (when-let [error (::error m)]
-    (throw error))
+    (throw (js/Error. error)))
   m)
 
 (defn- build-xf
