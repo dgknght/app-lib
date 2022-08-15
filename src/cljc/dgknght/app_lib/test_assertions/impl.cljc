@@ -193,9 +193,11 @@
 
 (defn http-redirect-to?
   [msg form]
-  (let [req (safe-nth form 1)
-        target (safe-nth form 2)]
-    `(let [res# ~req]
+  (let [target (safe-nth form 1)
+        res (safe-nth form 2)]
+    `(let [res# ~res]
+       (assert (string? ~target) (str "The first agument must be a url. Found: " (prn-str ~target)))
+       (assert (map? res#) (str "The second argument must be a response map. Found: " (prn-str res#)))
        (if (= 302 (:status res#))
          (if (= ~target
                 (get-in res# [:headers "Location"]))
