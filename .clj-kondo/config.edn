@@ -25,4 +25,5 @@
                                                            http-response-without-cookie?
                                                            same-date?])
                                          (cljs.test/is [comparable?])
-                                         (dgknght.app-lib.web-mocks/with-web-mocks [calls])]}}}
+                                         (dgknght.app-lib.web-mocks/with-web-mocks [calls])]}
+           :namespace-name-mismatch :off}}
