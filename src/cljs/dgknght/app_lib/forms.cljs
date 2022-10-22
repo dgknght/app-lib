@@ -605,29 +605,47 @@
   ([model field items options]
    (select-elem model field items (assoc-in options [::decoration ::presentation] ::field))))
 
-(defn- typeahead-select-item
-  [{:keys [value-fn
-           caption-fn
-           on-change
-           items
-           text-value
-           model
+(defmulti apply-selected-item
+  (fn [_ {:keys [mode]}] mode))
+
+(defmethod apply-selected-item :direct
+  [item {:keys [text-value
+                value-fn
+                model
+                field
+                on-change]
+         :or {on-change identity}}]
+  (if item
+    (let [new-value (value-fn item)]
+      (reset! text-value new-value)
+      (swap! model assoc-in field new-value)
+      (on-change item))
+    (let [new-value @text-value]
+      (swap! model assoc-in field new-value)
+      (on-change new-value))))
+
+(defmethod apply-selected-item :default
+  [item {:keys [model
+                field
+                text-value
+                caption-fn
+                on-change
+                value-fn]
+         :or {caption-fn identity}}]
+  (when item
+    (swap! model
+           assoc-in
            field
-           mode]
-    :or {on-change identity
-         caption-fn identity}}]
+           (value-fn item))
+    (reset! text-value (caption-fn item)))
+  (on-change item))
+
+(defn- typeahead-select-item
+  [{:keys [items] :as opts}]
   (fn [index]
     (let [item (lib/safe-nth @items index)]
       (reset! items nil)
-      (when item
-        (swap! model
-               assoc-in
-               field
-               (value-fn item))
-        (if (= :direct mode)
-          (reset! text-value (value-fn item))
-          (reset! text-value (caption-fn item)))
-        (on-change item)))))
+      (apply-selected-item item opts))))
 
 (defn- assoc-select-item
   [options]
