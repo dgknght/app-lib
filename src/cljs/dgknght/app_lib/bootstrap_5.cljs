@@ -113,7 +113,32 @@
     (doseq [node nodes]
       (. (ctor. node #js {}) show))))
 
-(defn toast
+(defmulti toast
+  #(if (:title %)
+     :with-title
+     :default))
+
+(defmethod toast :default
+  [{:keys [body id]}]
+  ^{:key (str "toast-" id)}
+  [:div.toast
+   {:role :alert
+    :class ["text-light"
+            "bg-primary"
+            "border-0"
+            "fixed-bottom"
+            "mb-3"
+            "start-50"
+            "translate-middle-x"]
+    :aria-live :assertive
+    :aria-atomic true}
+   [:div.d-flex
+    [:div.toast-body body]
+    [:button.btn-close.btn-close-white.me-2.m-auto
+     {:aria-label "Close"
+      :on-click #(notify/untoast id)}]]])
+
+(defmethod toast :with-title
   [{:keys [title body id]}]
   ^{:key (str "toast-" id)}
   [:div.toast {:role :alert

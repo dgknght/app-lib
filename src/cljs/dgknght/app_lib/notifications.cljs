@@ -1,5 +1,6 @@
 (ns dgknght.app-lib.notifications
-  (:require [reagent.core :as r]
+  (:require [cljs.core.async :as a]
+            [reagent.core :as r]
             [goog.string :as gstr]
             [cljs-time.core :as t]))
 
@@ -56,15 +57,18 @@
 
 (declare sweep-toasts)
 (defn queue-toast-sweep []
-  (.setTimeout js/window sweep-toasts toast-sweep-interval))
+  (a/go
+    (a/<! (a/timeout toast-sweep-interval))
+    (sweep-toasts)))
 
 (defn toast
-  [title body]
-  (swap! toasts conj {:title title
-                      :body body
-                      :expires-at (t/from-now (t/seconds 2))
-                      :id (str (random-uuid))})
-  (queue-toast-sweep))
+  ([body] (toast nil body))
+  ([title body]
+   (swap! toasts conj (cond-> {:body body
+                               :expires-at (t/from-now (t/seconds 2))
+                               :id (str (random-uuid))}
+                        title (assoc :title title)))
+   (queue-toast-sweep)))
 
 (defn toastf
   [title body-pattern & args]
