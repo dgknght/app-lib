@@ -201,3 +201,21 @@
          1 2
          0 1
          -1 0)))
+
+(deftest identify-a-collection-with-one-element
+  (is (lib/one? [:a])
+      "A collection with one element is one")
+  (is (not (lib/one? []))
+      "An empty collection is not one")
+  (is (not (lib/one? [:a :b]))
+      "A collection with more than one element is not one"))
+
+(deftest deeply-dissoc-a-value
+  (is (= {:value {:one 1}}
+         (lib/dissoc-in {:value {:one 1
+                                 :two 2}}
+                        [:value :two])))
+  (is (= {:one 1}
+         (lib/dissoc-in {:one 1
+                         :two 2}
+                        [:two]))))

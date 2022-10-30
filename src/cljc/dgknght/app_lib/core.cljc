@@ -255,3 +255,15 @@
   [x]
   #?(:cljs (satisfies? IDeref x)
      :clj (instance? clojure.lang.IDeref x)))
+
+(defn one?
+  [coll]
+  {:pre [(sequential? coll)]}
+
+  (= 1 (count coll)))
+
+(defn dissoc-in
+  [m [k & ks]]
+  (if (empty? ks)
+    (dissoc m k)
+    (update-in m [k] dissoc-in ks)))
