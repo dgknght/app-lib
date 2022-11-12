@@ -117,6 +117,11 @@
   `(test/do-report
      ~(impl/mime-msg-containing? msg form)))
 
+(defmethod test/assert-expr 'dgknght.app-lib.test-assertions/mime-msg-not-containing?
+  [_env msg form]
+  `(test/do-report
+     ~(impl/mime-msg-not-containing? msg form)))
+
 (defmethod test/assert-expr 'dgknght.app-lib.test-assertions/http-response-with-cookie?
   [_env msg form]
   `(test/do-report

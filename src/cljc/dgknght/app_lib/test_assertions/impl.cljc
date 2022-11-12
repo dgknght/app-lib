@@ -303,9 +303,9 @@
 
 (defn mime-msg-containing?
   [msg form]
-  (let [content-type (safe-nth form 1)
-        pattern (safe-nth form 2)
-        mime-msg (safe-nth form 3)]
+  (let [mime-msg (safe-nth form 1)
+        content-type (safe-nth form 2)
+        pattern (safe-nth form 3)]
     `(let [content# (->> (:body ~mime-msg)
                          (filter #(= ~content-type (:type %)))
                          (map :content)
@@ -316,6 +316,28 @@
                 :fail)
         :message (if content#
                    (report-msg ~msg (fmt "Expected to find \"%s\" in the %s content, but did not find it."
+                                         ~pattern
+                                         ~content-type))
+                   (report-msg ~msg (fmt "Expected to find content type %s in the message, but did not find it."
+                                         ~content-type)))
+        :expected ~pattern
+        :actual content#})))
+
+(defn mime-msg-not-containing?
+  [msg form]
+  (let [mime-msg (safe-nth form 1)
+        content-type (safe-nth form 2)
+        pattern (safe-nth form 3)]
+    `(let [content# (->> (:body ~mime-msg)
+                         (filter #(= ~content-type (:type %)))
+                         (map :content)
+                         first)]
+       {:type (if (and content#
+                       (re-find ~pattern content#))
+                :fail
+                :pass)
+        :message (if content#
+                   (report-msg ~msg (fmt "Expected not to find \"%s\" in the %s content, but found it."
                                          ~pattern
                                          ~content-type))
                    (report-msg ~msg (fmt "Expected to find content type %s in the message, but did not find it."

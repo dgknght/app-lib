@@ -21,9 +21,37 @@
                                                            http-teapot?
                                                            http-unprocessable?
                                                            mime-msg-containing?
+                                                           mime-msg-not-containing?
                                                            http-response-with-cookie?
                                                            http-response-without-cookie?
                                                            same-date?])
-                                         (cljs.test/is [comparable?])
+                                         (cljs.test/is [comparable?
+                                                        dgknght.app-lib.test-assertions/seq-of-maps-like?
+                                                        ])
                                          (dgknght.app-lib.web-mocks/with-web-mocks [calls])]}
-           :namespace-name-mismatch :off}}
+           :unresolved-var {:exclude [dgknght.app-lib.test-assertions/seq-of-maps-like?
+                                      dgknght.app-lib.test-assertions/comparable?
+                                      dgknght.app-lib.test-assertions/seq-with-map-like?
+                                      dgknght.app-lib.test-assertions/seq-with-no-map-like?
+                                      dgknght.app-lib.test-assertions/seq-containing-value?
+                                      dgknght.app-lib.test-assertions/seq-excluding-value?
+                                      dgknght.app-lib.test-assertions/seq-containing-model?
+                                      dgknght.app-lib.test-assertions/seq-excluding-model?
+                                      dgknght.app-lib.test-assertions/http-success?
+                                      dgknght.app-lib.test-assertions/http-created?
+                                      dgknght.app-lib.test-assertions/http-no-content?
+                                      dgknght.app-lib.test-assertions/http-bad-request?
+                                      dgknght.app-lib.test-assertions/http-unauthorized?
+                                      dgknght.app-lib.test-assertions/http-forbidden?
+                                      dgknght.app-lib.test-assertions/http-not-found?
+                                      dgknght.app-lib.test-assertions/http-teapot?
+                                      dgknght.app-lib.test-assertions/http-unprocessable?
+                                      dgknght.app-lib.test-assertions/url-like?
+                                      dgknght.app-lib.test-assertions/not-url-like?
+                                      dgknght.app-lib.test-assertions/mime-msg-containing?
+                                      dgknght.app-lib.test-assertions/mime-msg-not-containing?
+                                      dgknght.app-lib.test-assertions/http-response-with-cookie?
+                                      dgknght.app-lib.test-assertions/http-response-without-cookie?
+                                      dgknght.app-lib.test-assertions/same-date?]}
+           :namespace-name-mismatch {:level :off}}
+ :output {:linter-name true}}

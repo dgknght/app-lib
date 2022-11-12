@@ -281,6 +281,18 @@
         ~(impl/mime-msg-containing? msg form)))))
 
 #?(:clj
+   (defmethod test/assert-expr 'mime-msg-not-containing?
+     [msg form]
+     `(test/report
+        ~(impl/mime-msg-not-containing? msg form)))
+   :cljs
+   (when (exists? js/cljs.test$macros)
+     (defmethod js/cljs.test$macros.assert_expr 'dgknght.app-lib.test-assertions/mime-msg-not-containing?
+       [_env msg form]
+       `(test/report
+        ~(impl/mime-msg-not-containing? msg form)))))
+
+#?(:clj
    (defmethod test/assert-expr 'http-response-with-cookie?
      [msg form]
      `(test/report

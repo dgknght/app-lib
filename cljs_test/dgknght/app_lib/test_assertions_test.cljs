@@ -141,13 +141,19 @@
 
 (deftest assert-content-in-a-mime-message
   (is (dgknght.app-lib.test-assertions/mime-msg-containing?
-        "text/html" #"Hello\!"
-        mime-msg)
+        mime-msg "text/html" #"Hello\!")
       "Text can be matched in the HTML content")
   (is (dgknght.app-lib.test-assertions/mime-msg-containing?
-        "text/plain" #"texter"
-        mime-msg)
+        mime-msg "text/plain" #"texter")
       "Text can be matched in the text content"))
+
+(deftest assert-content-not-in-a-mime-message
+  (is (dgknght.app-lib.test-assertions/mime-msg-not-containing?
+        mime-msg "text/html" #"texter")
+      "Text can be asserted NOT to be in the HTML content")
+  (is (dgknght.app-lib.test-assertions/mime-msg-not-containing?
+        mime-msg "text/plain" #"Hello\!")
+      "Text can be asserted NOT to be in the text content"))
 
 (def ^:private http-response
   {:status 200
