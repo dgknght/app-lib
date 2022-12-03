@@ -1,8 +1,8 @@
 (ns dgknght.app-lib.test-assertions.impl
   (:require [clojure.data :refer [diff]]
             [clojure.string :as string]
-            #?(:clj [clojure.spec.alpha :as s]
-               :cljs [cljs.spec.alpha :as s])
+            #?(:clj [clojure.spec.alpha]
+               :cljs [cljs.spec.alpha])
             #?(:clj [clojure.data.zip :as zip])
             #?(:clj [clojure.data.zip.xml :refer [xml1->]])
             #?(:clj [clojure.zip :refer [xml-zip]])
@@ -419,13 +419,13 @@
            :actual actual#}))))
 
 (defn conformant?
-  [msg form]
+  [msg form valid? explain]
   (let [spec (safe-nth form 1)
         value (safe-nth form 2)]
     `(let [expected# (str "Conformance with " ~spec)]
        {:expected expected#
-        :actual (s/explain-str ~spec ~value)
+        :actual (~explain ~spec ~value)
         :message ~msg
-        :type (if (s/valid? ~spec ~value)
+        :type (if (~valid? ~spec ~value)
                 :pass
                 :fail)})))
