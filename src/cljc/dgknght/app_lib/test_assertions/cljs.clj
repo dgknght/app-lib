@@ -132,11 +132,10 @@
   `(test/do-report
      ~(impl/http-response-without-cookie? msg form)))
 
-#?(:clj
-   (defmethod test/assert-expr 'dgknght.app-lib.test-assertions/same-date?
-     [_env msg form]
-     `(test/do-report
-        ~(impl/same-date? msg form))))
+(defmethod test/assert-expr 'dgknght.app-lib.test-assertions/same-date?
+  [_env msg form]
+  `(test/do-report
+     ~(impl/same-date? msg form)))
 
 (defmethod test/assert-expr 'dgknght.app-lib.test-assertions/conformant?
   [_env msg form]
