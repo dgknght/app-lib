@@ -1,6 +1,7 @@
 {:linters {:unresolved-symbol {:exclude [(clojure.test/is [valid?
                                                            invalid?
                                                            comparable?
+                                                           conformant?
                                                            url-like?
                                                            not-url-like?
                                                            called?
@@ -31,6 +32,7 @@
                                          (dgknght.app-lib.web-mocks/with-web-mocks [calls])]}
            :unresolved-var {:exclude [dgknght.app-lib.test-assertions/seq-of-maps-like?
                                       dgknght.app-lib.test-assertions/comparable?
+                                      dgknght.app-lib.test-assertions/conformant?
                                       dgknght.app-lib.test-assertions/seq-with-map-like?
                                       dgknght.app-lib.test-assertions/seq-with-no-map-like?
                                       dgknght.app-lib.test-assertions/seq-containing-value?

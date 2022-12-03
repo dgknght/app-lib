@@ -327,3 +327,21 @@
      [msg form]
      `(test/report
         ~(impl/same-date? msg form))))
+
+#?(:clj
+   (defmethod test/assert-expr 'conformant?
+     [msg form]
+     `(test/report
+        ~(impl/conformant? msg
+                           form
+                           'clojure.spec.alpha/valid?
+                           'clojure.spec.alpha/explain-str)))
+   :cljs
+   (when (exists? js/cljs.test$macros)
+     (defmethod js/cljs.test$macros.assert_expr 'dgknght.app-lib.test-assertions/conformant?
+       [_env msg form]
+       `(test/report
+        ~(impl/conformant? msg
+                           form
+                           'cljs.spec.alpha/valid?
+                           'cljs.spec.alpha/explain-str)))))

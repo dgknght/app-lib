@@ -4,13 +4,7 @@
             [dgknght.app-lib.web-mocks.matching :refer [match?]]
             [dgknght.app-lib.web-mocks.impl :as impl]
             #?(:cljs [cljs.core.async :as a])
-            #?(:clj [clojure.test :as test])
-            #?(:cljs [goog.string :as gstr])))
-
-#?(:cljs
-   (defn- format
-     [f & args]
-     (apply gstr/format f args)))
+            #?(:clj [clojure.test :as test])))
 
 (defn parse-query-string
   [{:keys [query-string] :as m}]
