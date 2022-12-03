@@ -1,5 +1,5 @@
 (ns dgknght.app-lib.decimal
-  (:refer-clojure :exclude [+ - * / zero?])
+  (:refer-clojure :exclude [+ - * / zero? abs])
   (:require ["decimal.js" :as Decimal]))
 
 (defn ->decimal

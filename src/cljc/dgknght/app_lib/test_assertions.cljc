@@ -326,4 +326,22 @@
    (defmethod test/assert-expr 'same-date?
      [msg form]
      `(test/report
-        ~(impl/same-date? msg form))))
+        ~(impl/same-date? msg form)))
+   :cljs
+   (when (exists? js/cljs.test$macros)
+     (defmethod js/cljs.test$macros.assert_expr 'dgknght.app-lib.test-assertions/same-date?
+       [_env msg form]
+       `(test/report
+        ~(impl/same-date? msg form)))))
+
+#?(:clj
+   (defmethod test/assert-expr 'conformant?
+     [msg form]
+     `(test/report
+        ~(impl/conformant? msg form)))
+   :cljs
+   (when (exists? js/cljs.test$macros)
+     (defmethod js/cljs.test$macros.assert_expr 'dgknght.app-lib.test-assertions/conformant?
+       [_env msg form]
+       `(test/report
+        ~(impl/conformant? msg form)))))

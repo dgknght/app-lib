@@ -174,3 +174,9 @@
         (t/local-date 2000 3 2)
         (t/local-date 2000 3 2))
       "Two local-date instances initialized with the same values are the same"))
+
+(deftest assert-spec-validation
+  (is (dgknght.app-lib.test-assertions/conformant?
+        #{:one :two}
+        :one)
+      "Conformance to a spec can be asserted"))
