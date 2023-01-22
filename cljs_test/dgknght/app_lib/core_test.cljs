@@ -202,6 +202,10 @@
          0 1
          -1 0)))
 
+(deftest identify-a-derefable
+  (is (lib/derefable? (atom {})) "An atom is derefable")
+  (is (not (lib/derefable? {})) "A map is not derefable"))
+
 (deftest identify-a-collection-with-one-element
   (is (lib/one? [:a])
       "A collection with one element is one")

@@ -36,3 +36,15 @@
   ([state] (-busy state :bg-proc-count))
   ([state k]
    (derefable-apply state #(update-in % [k] (fmin (fnil dec 1) 0)))))
+
+(defn -busy-x
+  "Give a state map, returns a transducing fn that
+  reduces the busy count"
+  ([state]
+   (map (fn [a]
+          (-busy state)
+          a)))
+  ([state k]
+   (map (fn [a]
+          (-busy state k)
+          a))))

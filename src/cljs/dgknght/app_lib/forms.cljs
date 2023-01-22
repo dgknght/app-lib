@@ -1,10 +1,10 @@
 (ns dgknght.app-lib.forms
   (:require [reagent.core :as r]
             [reagent.ratom :refer [make-reaction]]
-            [clojure.string :as string]
             [goog.string :as gstr]
             [cljs-time.core :as t]
             [cljs-time.format :as tf]
+            [dgknght.app-lib.forms-validation :as v]
             [dgknght.app-lib.core :as lib]
             [dgknght.app-lib.web :refer [format-time
                                          unformat-time]]
@@ -13,7 +13,10 @@
             [dgknght.app-lib.html :as html]
             [dgknght.app-lib.bootstrap-icons :as icons]
             [dgknght.app-lib.calendar :as cal]
-            [dgknght.app-lib.calendar-view :as calview]))
+            [dgknght.app-lib.calendar-view :as calview]
+            [dgknght.app-lib.forms.common :refer [->id
+                                                  ->name]]
+            [dgknght.app-lib.forms.typeahead :as typeahead]))
 
 (def defaults (atom {}))
 
@@ -23,29 +26,12 @@
 (derive ::select ::text)
 (derive ::textarea ::text)
 
-(defn ->id
-  [field]
-  (->> field
-       (map (comp #(string/replace % #"[^a-z0-9_-]+" "")
-                  #(if (keyword? %)
-                     (name %)
-                     (str %))))
-       (string/join "-")))
-
 (defn ->caption
   [field]
   (let [humanized (humanize (last field))]
     (if-let [trimmed (re-find #"^.+(?= id$)" humanized)]
       trimmed
       humanized)))
-
-(defn ->name
-  [field]
-  (->> field
-       (map #(if (keyword? %)
-               (name %)
-               %))
-       (string/join "-")))
 
 (defn- infer-target
   [[tag attr]]
@@ -78,14 +64,14 @@
         extract-framework))
 
 (defmulti decorate
-  (fn [elem _model _field options]
+  (fn [elem _model _field _errors options]
     (when-not (= ::none (::decoration options))
       (extract-dispatch options elem))))
 
 (defmulti spinner extract-framework)
 
 (defmethod decorate :default
-  [elem _model field {::keys [decoration] :as options}]
+  [elem _model field _errors {::keys [decoration] :as options}]
   (when-not (= ::none decoration)
     (.warn js/console (prn-str {:unhandled-decoration decoration
                                 :elem elem
@@ -133,6 +119,7 @@
                                       (on-change @model))})]
          model
          field
+         [] ; TODO: do we ever validate a checkbox?
          options)))))
 
 (defn checkbox-field
@@ -163,9 +150,9 @@
                                                     (swap! model update-in field (fnil conj #{}) value)
                                                     (swap! model update-in field disj value)))
                                      :value value}]
-                            (decorate model field (-> options
-                                                      (assoc-in [::decoration ::presentation] ::inline-field)
-                                                      (assoc :caption label)))
+                            (decorate model field []  (-> options
+                                                          (assoc-in [::decoration ::presentation] ::inline-field)
+                                                          (assoc :caption label)))
                             (with-meta {:key id})))))
        doall))
 
@@ -192,12 +179,14 @@
       (checkbox-inputs* model field items options)])))
 
 (defn text-input
-  [model field {:keys [html on-change]
+  [model field {:keys [html on-change validations]
                 input-type :type
                 :or {input-type :text
                      on-change identity}
                 :as options}]
-  (let [value (r/cursor model field)]
+  (let [value (r/cursor model field)
+        errors (make-reaction #(v/validation-msg model field))]
+    (v/add-rules model field validations)
     (fn []
       (decorate
         [:input (merge {:id (->id field)}
@@ -205,12 +194,16 @@
                        {:type input-type
                         :name (->name field)
                         :value @value
+                        :on-blur (fn [e]
+                                   (v/validate model field)
+                                   (v/set-custom-validity e @model field))
                         :on-change (fn [e]
                                      (let [new-value (-> e html/target html/value)]
                                        (swap! model assoc-in field new-value)
                                        (on-change new-value)))})]
         model
         field
+        @errors
         options))))
 
 (defn text-field
@@ -226,71 +219,12 @@
                    :or {transform-fn identity}}]
    (swap! model assoc-in field (-> e .-target .-value transform-fn))))
 
-(def ^:private validation-rules
-  {:required (fn [model field]
-               (when (string/blank? (str (get-in model field)))
-                 (js/Promise.resolve "is required.")))
-   :format (fn [model field pattern]
-             (let [v (get-in model field)]
-               (when (and v (not (re-find pattern v)))
-                 (js/Promise.resolve "is invalid."))))
-   :length (fn [model field {:keys [min max]}]
-             (let [v (get-in model field)]
-               (when v
-                 (cond
-                   (and min
-                        (< (count v) min))
-                   (js/Promise.resolve (str "must be at least " min " characters."))
-
-                   (and max
-                        (> (count v) max))
-                   (js/Promise.resolve (str "cannot be more than " max " characters."))))))})
-
-(defn- check-validation-rule
-  [rule model field]
-  (let [[f args] (cond
-            (keyword? rule)
-            [(rule validation-rules) []]
-
-            (vector? rule)
-            [((first rule) validation-rules) (rest rule)]
-
-            :else
-            [rule []])]
-
-    (when-not f
-      (throw (str "Unrecognized rule: " (prn-str rule))))
-
-    (apply f (concat [model field] args))))
-
-(defn- check-validation-rules
-  [model field rules]
-  (when (seq rules)
-    (js/Promise.all
-      (map #(check-validation-rule % model field)
-           rules))))
-
-(defn- validate-field
-  [model field rules]
-  (when (seq rules)
-    (let [p (check-validation-rules @model field rules)]
-      (.then p (fn [results]
-                 (let [violations (->> results
-                                       (filter identity)
-                                       (map #(str (humanize (last field)) " " %)))]
-                   (if (seq violations)
-                     (swap! model #(-> %
-                                       (assoc-in [::input-classes field] "is-invalid")
-                                       (assoc-in [::invalid-feedback field] (string/join ", " violations))))
-                     (swap! model #(-> %
-                                       (assoc-in [::input-classes field] "is-valid")
-                                       (update-in [::invalid-feedback] dissoc field))))))))))
-
 (defn textarea-elem
   ([model field] (textarea-elem model field {}))
   ([model field options]
    (let [changed? (r/atom false)
-         value (r/cursor model field)]
+         value (r/cursor model field)
+         errors (make-reaction #(v/validation-msg model field))]
      (fn []
        (decorate
          [:textarea
@@ -303,11 +237,10 @@
                           (reset! changed? true)
                           (update-field model field e))
              :on-blur #(when (or @changed? (nil? @value))
-                         (validate-field model
-                                         field
-                                         (:validate options)))})]
+                         (v/validate model field))})]
          model
          field
+         @errors
          options)))))
 
 (defn textarea-field
@@ -344,9 +277,13 @@
 
 (defn password-field
   ([model field {:keys [new?] :as options}]
-   (text-field model field (merge options {:type :password
-                                           :html {:auto-complete (if new? "new-password"
-                                                                   "current-password")}}))))
+   (text-field
+     model
+     field
+     (merge options {:type :password
+                     :html {:auto-complete (if new?
+                                             "new-password"
+                                             "current-password")}}))))
 
 (defn- specialized-text-input
   [model field {input-type :type
@@ -355,6 +292,7 @@
                        equals-fn
                        disabled-fn
                        on-accept
+                       validations
                        html]
                 :or {input-type :text
                      equals-fn =
@@ -362,7 +300,9 @@
                      unparse-fn str
                      on-accept identity}
                 :as options}]
-  (let [text-value (r/atom (unparse-fn (get-in @model field)))]
+  (let [text-value (r/atom (unparse-fn (get-in @model field)))
+        errors (make-reaction #(v/validation-msg model field))]
+    (v/add-rules model field validations)
     (add-watch model
                (cons ::specialized-text-input field)
                (fn [_field _sender before after]
@@ -398,10 +338,13 @@
                                         (if (seq new-value)
                                           (when parsed
                                             (swap! model assoc-in field parsed)
+                                            (v/validate model field)
                                             (on-accept))
-                                          (swap! model nilify field))
+                                          (do
+                                            (swap! model nilify field)
+                                            (v/validate model field)))
                                         (reset! text-value new-value)))})]
-        (decorate [:input attr] model field options)))))
+        (decorate [:input attr] model field @errors options)))))
 
 (defn- parse-full-date
   [date-string]
@@ -565,35 +508,41 @@
   field - a vector describing the location in the model where the value for this field is to be saved. (As in get-in)
   items - The items to be rendered in the list. Each item in the list is a tuple with the value in the 1st position and the label in the 2nd."
   [model field items {:keys [transform-fn
+                             validations
                              on-change
                              html]
                       :or {transform-fn identity
                            on-change identity
                            html {}}
                       :as options}]
-  (fn []
-    (decorate
-      [:select (merge html
-                      {:id field
-                       :name field
-                       :value (or (get-in @model field) "")
-                       :on-change (fn [e]
-                                    (let [value (.-value (.-target e))]
-                                      (swap! model
-                                             assoc-in
-                                             field
-                                             (if (empty? value)
-                                               nil
-                                               (transform-fn value)))
-                                      (on-change model field)))})
-       (->> (if (lib/derefable? items)
-              @items
-              items)
-            (map #(select-option % field))
-            doall)]
-      model
-      field
-      options)))
+  (v/add-rules model field validations)
+  (let [errors (make-reaction #(v/validation-msg model field))]
+    (fn []
+      (decorate
+        [:select (merge html
+                        {:id field
+                         :name field
+                         :value (or (get-in @model field) "")
+                         :on-change (fn [e]
+                                      (let [value (.-value (.-target e))]
+                                        (swap! model
+                                               assoc-in
+                                               field
+                                               (if (empty? value)
+                                                 nil
+                                                 (transform-fn value)))
+                                        (v/validate model field)
+                                        (v/set-custom-validity e @model field)
+                                        (on-change model field)))})
+         (->> (if (lib/derefable? items)
+                @items
+                items)
+              (map #(select-option % field))
+              doall)]
+        model
+        field
+        @errors
+        options))))
 
 (defn select-field
   "Renders a select element within a bootstrap field-group with a label.
@@ -640,203 +589,6 @@
     (reset! text-value (caption-fn item)))
   (on-change item))
 
-(defn- typeahead-select-item
-  [{:keys [items] :as opts}]
-  (fn [index]
-    (let [item (lib/safe-nth @items index)]
-      (reset! items nil)
-      (apply-selected-item item opts))))
-
-(defn- assoc-select-item
-  [options]
-  (assoc options :select-item (typeahead-select-item options)))
-
-(defn- typeahead-key-down
-  [{:keys [model
-           field
-           find-fn
-           caption-fn
-           items
-           index
-           text-value
-           select-item]
-    :or {find-fn identity
-         caption-fn identity}}]
-  (fn [e]
-    (when @items
-      (case (html/key-code e)
-        :up           (swap! index #(-> (or % (count @items))
-                                        dec
-                                        (mod (count @items))))
-        :down         (swap! index #(-> (or % -1)
-                                        inc
-                                        (mod (count @items))))
-        (:enter :tab) (select-item @index)
-        :escape       (do
-                        (find-fn (get-in @model field)
-                                 #(reset! text-value (caption-fn %)))
-                        (reset! items nil))
-        nil))))
-
-(defn- assoc-key-down
-  [options]
-  (assoc options :handle-key-down (typeahead-key-down options)))
-
-(defn- typeahead-focus
-  [{:keys [model
-           field
-           search-fn
-           max-items
-           items
-           min-input-length]}]
-  (fn [_e]
-    (when (and (nil? (get-in @model field))
-               (zero? min-input-length))
-      (search-fn nil #(->> %
-                           (take max-items)
-                           (reset! items))))))
-
-(defn- assoc-handle-focus
-  [options]
-  (assoc options :handle-focus (typeahead-focus options)))
-
-(defn- typeahead-handle-change
-  [{:keys [text-value
-           items
-           max-items
-           search-fn
-           model
-           field
-           mode]
-    :or {search-fn identity}}] ; TODO: Is this still the best default?
-  (fn [e]
-    (let [raw-value (-> e html/target html/value)]
-      (reset! text-value raw-value)
-      (when (= :direct mode)
-        (swap! model assoc-in field raw-value))
-      (if (empty? raw-value)
-        (reset! items nil)
-        (search-fn raw-value #(->> %
-                                   (take max-items)
-                                   (reset! items)))))))
-
-(defn- assoc-handle-change
-  [options]
-  (assoc options :handle-change (typeahead-handle-change options)))
-
-(defn- typeahead-list
-  [{:keys [field
-           list-attr
-           items
-           index
-           select-item
-           list-caption-fn]
-    :or {list-attr {}}}]
-  (apply vector
-         :div
-         list-attr
-         (map-indexed
-           (fn [i item]
-             ^{:key (str (string/join field "-") "option-" i)
-               :active? (= @index i)}
-             [:button {:type :button
-                       :on-click #(select-item i)}
-              (list-caption-fn item)])
-           @items)))
-
-(defn- identity-callback
-  [v callback]
-  (callback v))
-
-(defn- typeahead-state
-  [model field {:keys [mode
-                       caption-fn
-                       list-caption-fn
-                       value-fn
-                       find-fn]
-                :or {caption-fn identity}
-                :as options}]
-  {:pre [(contains? #{:direct :indirect nil}
-                    (:mode options))]}
-  (-> {:max-items 10
-       :min-input-length 1}
-      (merge options
-             {:model model
-              :field field
-              :text-value (r/atom "")
-              :items (r/atom nil)
-              :index (r/atom nil)
-              :caption-fn caption-fn
-              :value-fn (or value-fn (if (= mode :direct)
-                                       #(get-in % field)
-                                       identity))
-              :list-caption-fn (or list-caption-fn
-                                   caption-fn)
-              :find-fn (or find-fn identity-callback)})
-      (update-in [:html :id] (fnil identity (->id field)))
-      assoc-select-item
-      assoc-key-down
-      assoc-handle-change
-      assoc-handle-focus))
-
-(defmulti ^:private handle-model-change
-  (fn [_ _ {:keys [mode]}] mode))
-
-(defmethod handle-model-change :default
-  [before after {:keys [field
-                        find-fn
-                        text-value
-                        caption-fn]}]
-  (let [after-v (get-in after field)]
-    (when (not= (get-in before field)
-                after-v)
-      (find-fn after-v
-               #(reset! text-value (caption-fn %))))))
-
-(defmethod handle-model-change :direct
-  [_ after {:keys [field text-value]}]
-  (let [v-after (get-in after field)]
-    (reset! text-value v-after)))
-
-(defn- watch-typeahead-model
-  [{:keys [model field text-value index] :as options}]
-  (add-watch model
-             (cons ::typeahead field)
-             (fn [_ _ before after]
-               (if (get-in after field)
-                 (handle-model-change before after options)
-                 (do
-                   (reset! text-value "")
-                   (reset! index nil))))))
-
-(defn- set-typeahead-value
-  [{:keys [model field find-fn text-value caption-fn]}]
-    (when-let [current-value (get-in @model field)]
-      (find-fn current-value #(reset! text-value (caption-fn %)))))
-
-(defn- typeahead-elem
-  [{:keys [field
-           items
-           html
-           text-value
-           handle-change
-           handle-key-down
-           handle-focus]
-    {:keys [on-key-up]} :html}]
-  [:input
-   (merge {:id (->id field)}
-          html
-          {:type :text
-           :auto-complete :off
-           :name (->name field)
-           :value @text-value
-           :on-key-down handle-key-down
-           :on-key-up (when on-key-up
-                        #(when-not @items
-                           (on-key-up %)))
-           :on-change handle-change
-           :on-focus handle-focus})])
-
 (defn typeahead-input
   "Renders an input field with typeahead search capability
 
@@ -853,15 +605,17 @@
     max-items       - the maximum number of matching data records to show in the list
     list-attr       - attributes to be applied to the list HTML element"
   [model field options]
-  (let [state (typeahead-state model field options)]
-    (set-typeahead-value state)
-    (watch-typeahead-model state)
+  (let [state (typeahead/state model field options)
+        errors (make-reaction #(v/validation-msg model field))]
+    (typeahead/set-value state)
+    (typeahead/watch-model state)
     (fn []
-      (let [input (typeahead-elem state)
-            result-list (typeahead-list state)]
+      (let [input (typeahead/elem state)
+            result-list (typeahead/list-elem state)]
         (decorate input
                   model
                   field
+                  @errors
                   (-> state
                       (assoc :list-elem result-list)
                       (update-in [::decoration] merge {::presentation ::element
@@ -869,15 +623,17 @@
 
 (defn typeahead-field
   [model field options]
-  (let [state (typeahead-state model field options)]
-    (set-typeahead-value state)
-    (watch-typeahead-model state)
+  (let [state (typeahead/state model field options)
+        errors (make-reaction #(v/validation-msg model field))]
+    (typeahead/set-value state)
+    (typeahead/watch-model state)
     (fn []
-      (let [input (typeahead-elem state)
-            result-list (typeahead-list state)]
+      (let [input (typeahead/elem state)
+            result-list (typeahead/list-elem state)]
         (decorate input
                   model
                   field
+                  @errors
                   (-> state
                       (assoc :list-elem result-list)
                       (update-in [::decoration] merge {::presentation ::field
@@ -895,13 +651,6 @@
   "Returns true if the model has any form validation errors."
   [model]
   (boolean (seq (::invalid-feedback @model))))
-
-(defn clean
-  "Given a model that has been populated and validated by
-  form controlrs, removes extra attributes added for those
-  purposes."
-  [m]
-  (dissoc m ::input-classes ::invalid-feedback))
 
 ; TODO: This either needs to be decorated, or moved somewhere else
 (defn busy-button

@@ -4,6 +4,13 @@ A Clojure library designed to ... well, that part is up to you.
 
 ## Usage
 
+### Client tests
+```bash
+npm install
+npm install -g karma-cli
+lein doo once
+```
+
 FIXME
 
 ## License

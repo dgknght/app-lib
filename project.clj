@@ -1,4 +1,4 @@
-(defproject com.github.dgknght/app-lib "0.2.7"
+(defproject com.github.dgknght/app-lib "0.2.8"
   :description "Library of commonly used functions for web app development"
   :url "https://github.com/dgknght/app-lib"
   :license {:name "EPL-2.0 OR GPL-2.0-or-later WITH Classpath-exception-2.0"
@@ -23,6 +23,7 @@
   :plugins [[lein-cljsbuild "1.1.8"]
             [lein-doo "0.1.11"]]
   :source-paths ["src/clj" "src/cljc" "src/cljs"]
+  :clean-targets [:target-path :compile-path "out"]
   :cljsbuild {:builds [{:source-paths ["src/cljs" "src/cljc"]
                         :compiler {:output-to "target/main.js"
                                    :optimizations :whitespace

@@ -7,6 +7,7 @@
                                           add-classes
                                           conj-to-vec]]
             [dgknght.app-lib.forms :as forms]
+            [dgknght.app-lib.forms-validation :as v]
             [dgknght.app-lib.bootstrap-icons :as icons]))
 
 (defn- jq-match
@@ -25,16 +26,12 @@
   [selector opts]
   (call (jq-match selector) :popover (clj->js opts)))
 
-(defn invalid-feedback
-  [model field]
-  (get-in model [::forms/invalid-feedback field]))
-
 (defmethod forms/decorate [::forms/checkbox ::forms/element ::bootstrap-4]
-  [elem _model _field _options]
+  [elem _model _field _errors _options]
   (add-class elem "form-check-input"))
 
 (defmethod forms/decorate [::forms/checkbox ::forms/field ::bootstrap-4]
-  [[_ attr :as elem] model field {:keys [hide?] :as options}]
+  [[_ attr :as elem] model field errors {:keys [hide?] :as options}]
   [:div.form-group {:class (when (if (satisfies? IDeref hide?)
                                    @hide?
                                    hide?)
@@ -44,26 +41,30 @@
      (forms/decorate elem
                      model
                      field
+                     errors
                      (assoc-in options [::forms/decoration ::forms/presentation] ::forms/element))
      (or (:caption options)
          (forms/->caption field))]]])
 
 (defmethod forms/decorate [::forms/checkbox ::forms/inline-field ::bootstrap-4]
-  [[_ attr :as elem] model field {:keys [input-container-html] :as options}]
+  [[_ attr :as elem] model field errors {:keys [input-container-html] :as options}]
   [:div.form-check.form-check-inline (merge {} input-container-html)
    [:label.form-check-label {:for (:id attr)}
     (forms/decorate elem
                     model
                     field
+                    errors
                     (assoc-in options [::forms/decoration ::forms/presentation] ::forms/element))
     (or (:caption options)
         (forms/->caption field))]])
 
 (defmethod forms/decorate [::forms/text ::forms/element ::bootstrap-4]
-  [elem _model _field {:keys [prepend append]}]
-  (let [decorated (add-class elem "form-control")]
+  [elem model _field errors {:keys [prepend append]}]
+  (let [decorated (cond-> (add-class elem "form-control")
+                    (v/valid? model) (add-class "is-valid")
+                    (seq errors) (add-class "is-invalid"))]
     (if (or prepend append)
-      [:div.input-group
+      [:div.input-group {:class (when (seq errors) "is-invalid")} ; adding is-invalid here triggers bootstraps invalid-feedback visbility
        (when prepend [:div.input-group-prepend prepend])
        decorated
        (when append [:div.input-group-append append])]
@@ -86,19 +87,22 @@
               :title "Helpful Hint"})))
 
 (defmethod forms/decorate [::forms/text ::forms/field ::bootstrap-4]
-  [[_ attr :as elem] model field {:keys [hide?] :as options}]
+  [[_ attr :as elem] model field errors {:keys [hide?] :as options}]
   (let [inner-decorated (forms/decorate elem
                                         model
                                         field
+                                        errors
                                         (assoc-in options
                                                   [::forms/decoration ::forms/presentation]
-                                                  ::forms/element))]
+                                                  ::forms/element))
+        errors (v/validation-msg @model field)]
     [:div.form-group {:class (when (if (satisfies? IDeref hide?) @hide? hide?) "d-none")}
      [:label {:for (:id attr)} (or (:caption options)
                                    (forms/->caption field))]
      (help-popover field options)
      inner-decorated
-     [:div.invalid-feedback (invalid-feedback @model field)]]))
+     (when errors
+       [:div.invalid-feedback errors])]))
 
 (defn- decorate-list-item
   [elem]
@@ -118,15 +122,15 @@
            (map decorate-list-item elems))))
 
 (defmethod forms/decorate [::forms/typeahead ::forms/element ::bootstrap-4]
-  [elem model field {:as options
+  [elem model field errors {:as options
                      :keys [list-elem]}]
   [:span
-   (forms/decorate elem model field (assoc-in options [::forms/decoration ::forms/target] ::forms/text))
+   (forms/decorate elem model field errors (assoc-in options [::forms/decoration ::forms/target] ::forms/text))
    (decorate-typeahead-list list-elem)])
 
 (defmethod forms/decorate [::forms/typeahead ::forms/field ::bootstrap-4]
-  [elem model field {:as options
-                     :keys [hide? caption list-elem]}]
+  [elem model field errors {:as options
+                            :keys [hide? caption list-elem]}]
   [:div.form-group {:class (when (if (satisfies? IDeref hide?) @hide? hide?) "d-none")}
    [:label {:for (get-in elem [1 :id])}
     (or caption
@@ -135,10 +139,11 @@
    (forms/decorate elem
                    model
                    field
+                   errors
                    (update-in options [::forms/decoration] merge {::forms/target ::forms/text
                                                                   ::forms/presentation ::forms/element}))
    (decorate-typeahead-list list-elem)
-   [:div.invalid-feedback (invalid-feedback @model field)]])
+   [:div.invalid-feedback (v/validation-msg @model field)]])
 
 (defmulti ^:private nav-item :role)
 

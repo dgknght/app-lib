@@ -6,7 +6,7 @@
             #?(:clj [clojure.pprint :refer [pprint]])
             #?(:cljs [goog.string :as gstr])
             #?(:cljs [dgknght.app-lib.decimal :as d]))
-  #?(:clj (:import java.util.UUID)))
+  #?(:clj (:import java.util.UUID clojure.lang.IDeref)))
 
 (defn format
   [msg & args]
@@ -252,9 +252,11 @@
         output))))
 
 (defn derefable?
-  [x]
-  #?(:cljs (satisfies? IDeref x)
-     :clj (instance? clojure.lang.IDeref x)))
+  "Returns a boolean value indicating whether or not
+  a value can be dereferenced."
+  [v]
+  #?(:clj (instance? IDeref v)
+     :cljs (satisfies? IDeref v)))
 
 (defn one?
   [coll]

@@ -2,8 +2,10 @@
   "Functions to build bootstrap 5.x web elements"
   (:require [dgknght.app-lib.inflection :refer [title-case]]
             [dgknght.app-lib.notifications :as notify]
-            [dgknght.app-lib.html :refer [add-class]]
+            [dgknght.app-lib.html :refer [add-classes]]
+            [dgknght.app-lib.core :as lib]
             [dgknght.app-lib.forms :as forms]
+            [dgknght.app-lib.forms-validation :as v]
             [dgknght.app-lib.bootstrap-4 :as bs-4]
             [dgknght.app-lib.bootstrap-icons :as icons]))
 
@@ -202,7 +204,7 @@
       [:div.alert.alert-danger "Must specify :busy?"])))
 
 (defmethod forms/decorate [::forms/checkbox ::forms/field ::bootstrap-5]
-  [[_ attr :as elem] model field {:keys [hide?] :as options}]
+  [[_ attr :as elem] model field errors {:keys [hide?] :as options}]
   [:div.mb-3 {:class (when (if (satisfies? IDeref hide?)
                              @hide?
                              hide?)
@@ -211,33 +213,39 @@
     (forms/decorate elem
                     model
                     field
+                    errors
                     (assoc-in options [::forms/decoration ::forms/presentation] ::forms/element))
     [:label.form-check-label {:for (:id attr)}
      (or (:caption options)
          (forms/->caption field))]]])
 
 (defmethod forms/decorate [::forms/select ::forms/element ::bootstrap-5]
-  [elem _model _field _options]
-  (add-class elem "form-select"))
+  [elem _model _field errors _options]
+  (add-classes elem (cond-> ["form-select"]
+                      (seq errors) (conj "is-invalid"))))
 
 (defmethod forms/decorate [::forms/text ::forms/field ::bootstrap-5]
-  [[_ attr :as elem] model field {:keys [hide?] :as options}]
+  [[_ attr :as elem] model field errors {:keys [hide?] :as options}]
   (let [inner-decorated (forms/decorate elem
                                         model
                                         field
+                                        errors
                                         (assoc-in options
                                                   [::forms/decoration ::forms/presentation]
                                                   ::forms/element))]
-    [:div.mb-3 {:class (when (if (satisfies? IDeref hide?) @hide? hide?) "d-none")}
+    [:div.mb-3 {:class (when (if (lib/derefable? hide?) @hide? hide?)
+                         "d-none")}
      [:label.form-label {:for (:id attr)} (or (:caption options)
                                               (forms/->caption field))]
      (bs-4/help-popover field options)
      inner-decorated
-     [:div.invalid-feedback (bs-4/invalid-feedback @model field)]]))
+     (when (and (v/validated? model)
+                (seq errors))
+       [:div.invalid-feedback errors])]))
 
 (defmethod forms/decorate [::forms/typeahead ::forms/field ::bootstrap-5]
-  [elem model field {:as options
-                     :keys [hide? caption list-elem]}]
+  [elem model field errors {:as options
+                            :keys [hide? caption list-elem]}]
   [:div.mb-3 {:class (when (if (satisfies? IDeref hide?) @hide? hide?) "d-none")}
    [:label.form-label {:for (get-in elem [1 :id])}
     (or caption
@@ -246,10 +254,11 @@
    (forms/decorate elem
                    model
                    field
+                   errors
                    (update-in options [::forms/decoration] merge {::forms/target ::forms/text
                                                                   ::forms/presentation ::forms/element}))
    (bs-4/decorate-typeahead-list list-elem)
-   [:div.invalid-feedback (bs-4/invalid-feedback @model field)]])
+   [:div.invalid-feedback (v/validation-msg @model field)]])
 
  (defn- nav-tab
    [{:keys [active?

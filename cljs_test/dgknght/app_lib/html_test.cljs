@@ -32,6 +32,14 @@
          (html/add-class [:div {:class ["row"]} "My words"] "d-none"))
       "An item is added to the vector if the vector already exists"))
 
+(deftest remove-a-class
+  (is (= [:div {:class ["two" "three"]}]
+         (html/remove-class [:div {:class ["one" "two" "three"]}] "one"))
+      "An element is removed from a vector")
+  (is (= [:div {:class "two"}]
+         (html/remove-class [:div {:class ["one" "two"]}] "one"))
+      "A vector with one element is converted to a string"))
+
 (deftest add-multiple-classes
   (is (= [:div {:class ["row" "d-none"]} "My Words"]
          (html/add-classes [:div "My Words"] "row" "d-none"))

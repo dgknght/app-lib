@@ -125,6 +125,24 @@
     (update-in elem [1 :class] conj-to-vec css-class)
     (apply vector tag {:class [css-class]} body)))
 
+(defn remove-from-vec
+  [values value]
+  (if (string? values)
+    (when-not (= value values)
+      values)
+    (let [result (->> values
+                      (remove #(= value %)))]
+      (case (count result)
+        0 nil
+        1 (first result)
+        result))))
+
+(defn remove-class
+  [elem css-class]
+  (if (map? (get-in elem [1]))
+    (update-in elem [1 :class] remove-from-vec css-class)
+    elem))
+
 (def concat-to-vec
   (lib/fscalar (fnil concat [])))
 
