@@ -42,7 +42,8 @@
                ; and now needs to be re-rendered the the text-value
                ; vs. having been changed somewhere here and does
                ; not now need to be rerendered?
-               (when-not before
+               (when (not= (get-in before field)
+                           (get-in after field))
                  (handle-model-change before after options)))))
 
 (defn set-value
@@ -118,7 +119,9 @@
         :down         (swap! index #(-> (or % -1)
                                         inc
                                         (mod (count @items))))
-        (:enter :tab) (select-item @index)
+        (:enter :tab) (do
+                        (select-item @index)
+                        (reset! index nil))
         :escape       (do
                         (find-fn (get-in @model field)
                                  #(reset! text-value (caption-fn %)))
