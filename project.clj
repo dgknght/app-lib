@@ -37,5 +37,7 @@
   :doo {:build "test"
         :alias {:default [:firefox-headless]}}
   :prep-tasks ["compile" ["cljsbuild" "once"]]
-  :jvm-opts  ["-Duser.timezone=UTC"]
+  :jvm-opts  ["-Duser.timezone=UTC"
+              "-Duser.country=US"
+              "-Duser.language=en"]
   :repositories [["clojars" {:creds :gpg}]])
