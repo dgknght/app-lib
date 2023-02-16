@@ -1,6 +1,7 @@
 (ns dgknght.app-lib.bootstrap-5
   "Functions to build bootstrap 5.x web elements"
-  (:require [dgknght.app-lib.inflection :refer [title-case]]
+  (:require [clojure.string :as string]
+            [dgknght.app-lib.inflection :refer [title-case]]
             [dgknght.app-lib.notifications :as notify]
             [dgknght.app-lib.html :refer [add-classes]]
             [dgknght.app-lib.core :as lib]
@@ -11,11 +12,32 @@
 
 (derive ::bootstrap-5 ::bs-4/bootstrap-4)
 
+(defmulti expand-nav-item
+  #(cond
+     (string? %) :string
+     (map? %) :map))
+ 
+(defmethod expand-nav-item :map
+  [i]
+  (if (-> i :children seq)
+    (update-in i [:children] #(map expand-nav-item %))
+    i))
+ 
+(defmethod expand-nav-item :string
+  [path]
+  {:id (keyword (->> (string/split path #"/")
+                     (filter lib/presence)
+                     (string/join "-")))
+   :label (->> (string/split path #"/")
+               (map title-case)
+               (filter lib/presence)
+               (string/join " "))
+   :path path})
+
 (defmulti nav-item
   #(or (:role %)
-       (if (seq (:children %))
-         :dropdown
-         :default)))
+       (when (seq (:children %))
+         :dropdown)))
 
 (defmethod ^:private nav-item :separator
   [{:keys [id]}]
@@ -30,8 +52,8 @@
      [:a.nav-link.dropdown-toggle {:href "#"
                                    :title tool-tip
                                    :class [(when active? "active")]
-                                   :data-bs-toggle "dropdown"
-                                   :role "button"
+                                   :data-bs-toggle :dropdown
+                                   :role :button
                                    :aria-expanded false
                                    :aria-haspopup true}
       label]
@@ -76,12 +98,14 @@
       [:div#primaryNav.collapse.navbar-collapse
        [:ul.navbar-nav.me-auto.mb-2.mb-lg-0
         (->> items
-             (map nav-item)
+             (map nav-item
+                  expand-nav-item)
              doall)]
        (when (seq secondary-items)
          [:ul.navbar-nav.mb-2.mb-lg-0
           (->> secondary-items
-               (map nav-item)
+               (map nav-item
+                    expand-nav-item)
                doall)])])
     (when profile-photo-url
       [:img.rounded-circle.d-none.d-lg-block
@@ -259,37 +283,26 @@
                                                                   ::forms/presentation ::forms/element}))
    (bs-4/decorate-typeahead-list list-elem)
    [:div.invalid-feedback (v/validation-msg @model field)]])
-
- (defn- nav-tab
-   [{:keys [active?
-            disabled?
-            hidden?
-            on-click
-            caption
-            elem-key]}]
-   ^{:key elem-key}
-   [:li.nav-item
-    [:a.nav-link {:href "#"
-                  :on-click on-click
-                  :class (cond
-                           active? "active"
-                           disabled? "disabled"
-                           hidden? "d-none")}
-     caption]])
-
+ 
 (defn nav-tabs
-   ([items]
-    (nav-tabs {} items))
-   ([options items]
-    [:ul.nav.nav-tabs options
-     (doall (map nav-tab items))]))
+  ([items]
+   (nav-tabs {} items))
+  ([options items]
+   [:ul.nav.nav-tabs options
+    (->> items
+         (map (comp nav-item
+                    expand-nav-item))
+         doall)]))
 
 (defn nav-pills
   ([items]
    (nav-pills {} items))
   ([options items]
    [:ul.nav.nav-pills options
-    (doall (map nav-tab items)) ]))
+    (->> items
+         (map (comp nav-item
+                    expand-nav-item))
+         doall) ]))
 
 (defn pagination
   [state]
