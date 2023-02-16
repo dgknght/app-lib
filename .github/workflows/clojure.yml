@@ -19,5 +19,7 @@ jobs:
       run: lein test
     - name: Install Karma CLI
       run: npm install -g karma-cli
+    - name: Install other packages
+      run: npm install
     - name: Run cljs tests
       run: lein doo once
