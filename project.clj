@@ -30,7 +30,7 @@
                                    :pretty-print true}
                         :jar true}
                        {:id "test"
-                        :source-paths ["src/cljs" "src/cljc" "cljs_test"]
+                        :source-paths ["src/cljs" "src/cljc" "test"]
                         :compiler {:output-to "out/testable.js"
                                    :main dgknght.app-lib.test-runner
                                    :optimizations :none}}]}
