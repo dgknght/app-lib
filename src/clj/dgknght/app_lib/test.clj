@@ -7,13 +7,16 @@
 
 (defn parse-html-body
   [{:keys [body html-body] :as response}]
+  {:pre [(map? response)]}
+
   (if html-body
     response
     (assoc response :html-body (html/parse-string body))))
 
 (defn parse-json-body
   [{:keys [body json-body] :as response}]
-  {:pre [(or (= 204 (:status response))
+  {:pre [(map? response)
+         (or (= 204 (:status response))
              (string? (:body response)))]}
 
   (if json-body

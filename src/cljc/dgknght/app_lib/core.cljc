@@ -178,9 +178,10 @@
 
 (defmethod prune-to :sequence
   [target source]
-  (let [ks (set (mapcat keys source))]
-    (map-indexed #(prune-map %2 (nth source %1) ks)
-         target)))
+  (let [ks (set (mapcat keys source))
+        src (concat source (repeat {}))]
+    (map-indexed #(prune-map %2 (nth src %1) ks)
+                 target)))
 
 (defmethod prune-to :default
   [target _source]
