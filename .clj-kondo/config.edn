@@ -5,6 +5,8 @@
                                                            url-like?
                                                            not-url-like?
                                                            called?
+                                                           called-with-headers?
+                                                           not-called?
                                                            seq-of-maps-like?
                                                            seq-with-map-like?
                                                            seq-with-no-map-like?
@@ -27,8 +29,8 @@
                                                            http-response-without-cookie?
                                                            same-date?])
                                          (cljs.test/is [comparable?
-                                                        dgknght.app-lib.test-assertions/seq-of-maps-like?
-                                                        ])
+                                                        dgknght.app-lib.test-assertions/seq-of-maps-like?])
+                                         (dgknght.app-lib.test/with-mail-capture [mailbox])
                                          (dgknght.app-lib.web-mocks/with-web-mocks [calls])]}
            :unresolved-var {:exclude [dgknght.app-lib.test-assertions/seq-of-maps-like?
                                       dgknght.app-lib.test-assertions/comparable?

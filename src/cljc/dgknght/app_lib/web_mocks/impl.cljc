@@ -1,5 +1,7 @@
 (ns dgknght.app-lib.web-mocks.impl
-  (:require [dgknght.app-lib.core :as lib]
+  (:require #?(:clj [clojure.test :as test]
+               :cljs [cljs.test :as test])
+            [dgknght.app-lib.core :as lib]
             [dgknght.app-lib.web-mocks.matching :refer [match?
                                                         meets-spec?
                                                         readable]]))
@@ -39,9 +41,9 @@
 
 (defn called-with-headers?
   [msg form]
-  (let [expected (lib/safe-nth form 1)
-        spec (lib/safe-nth form 2)
-        calls (lib/safe-nth form 3)]
+  (let [spec (lib/safe-nth form 1)
+        calls (lib/safe-nth form 2)
+        expected (lib/safe-nth form 3)]
     `(let [matches# (filter #(matches-headers? % ~expected) (deref ~calls))
            pass?# (meets-spec? (count matches#) ~spec)]
        (test/report {:expected {:headers ~expected

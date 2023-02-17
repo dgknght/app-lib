@@ -79,3 +79,16 @@
     (is (= "--TestRequestFormBoundary\r\nContent-Disposition: form-data; name=\"normal-field\"\r\n\r\nliteral content\r\n--TestRequestFormBoundary\r\nContent-Disposition: form-data; name=\"file-field-1\"; filename=\"data.csv\"\r\nContent-Type: text/csv\r\n\r\na,b,c\n1,2,3--TestRequestFormBoundary--\r\n"
            (slurp body))
         "the body is constructed from the parts")))
+
+(defn- send-mail [_])
+
+(deftest intercept-emails
+  (t/with-mail-capture
+    [mailbox dgknght.app-lib.test-test/send-mail 0]
+
+    (send-mail {:body "Test"})
+    (let [[m :as ms] @mailbox]
+      (is (= 1 (count ms)) "The message is intercepted")
+      (is (= {:body "Test"}
+             m)
+          "The message is preserved")) ))
