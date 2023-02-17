@@ -1,5 +1,5 @@
 (ns dgknght.app-lib.api-test
-  (:require [clojure.test :refer [deftest is #_testing]]
+  (:require [clojure.test :refer [deftest is testing]]
             [clojure.tools.logging :as log]
             [dgknght.app-lib.test-assertions]
             [dgknght.app-lib.validation :as v]
@@ -10,22 +10,28 @@
                     :body {:name "John Doe"}}
                    (api/creation-response {:name "John Doe"}))
       "A valid model gets 201 status")
-  #_(testing "an invalid model"
-    (let [logged (atom [])]
-      (with-redefs [logging/log* (fn [args]
-                                   (swap! logged conj args))]
-        (is (comparable? {:status 400
-                          :body {:name "John Doe"
-                                 ::v/errors {:age ["age is required"]}}}
-                         (api/creation-response {:name "John Doe"
-                                                 ::v/errors {:age ["age is required"]}}))
-            "An invalid model gets 400 status")
-        (let [[m & ms] @logged]
-          (is (= 1 (count ms))
-              "One message is logged")
-          (is (= [[:debug]]
-                 m)
-              "The error details are logged"))))))
+  (testing "an invalid model"
+    (let [logged (atom [])
+          result (with-redefs [log/log* (fn [& args]
+                                          (swap! logged conj args))]
+                   (api/creation-response (with-meta
+                                            {:name "John Doe"
+                                             :ssn "do not log this"
+                                             ::v/errors {:age ["age is required"]}}
+                                            {:model-type :user})))]
+      (is (comparable? {:status 400
+                        :body {:name "John Doe"
+                               ::v/errors {:age ["age is required"]}}}
+                       result)
+          "An invalid model gets 400 status")
+      (let [[m :as ms] @logged]
+        (is (= 1 (count ms))
+            "One message is logged")
+        (is (= [:info
+                 nil
+                 "Unable to save the model {:model-type :user}: age is required"]
+               (rest m))
+            "The validation failures are logged")))))
 
 (deftest create-a-response-for-an-update-action
   (is (comparable? {:status 200

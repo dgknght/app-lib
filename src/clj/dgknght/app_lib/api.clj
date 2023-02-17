@@ -20,9 +20,8 @@
 (defn creation-response
   [model]
   (when (v/has-error? model)
-    (log/debugf "Unable to save the model %s %s: %s"
+    (log/infof "Unable to save the model %s: %s"
                 (meta model)
-                model
                 (string/join ", " (v/flat-error-messages model))))
   (response model (if (and (map? model)
                            (v/has-error? model))
@@ -76,6 +75,7 @@
 (defn- error-response
   [error]
   (log/errorf error "Unexpected error handling request")
+  ; TODO: I think this below is redundant
   (doseq [f (.getStackTrace error)]
     (log/error (.toString f)))
   internal-server-error)
