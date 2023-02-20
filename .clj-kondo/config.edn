@@ -28,6 +28,7 @@
                                                            http-response-with-cookie?
                                                            http-response-without-cookie?
                                                            same-date?])
+                                         (dgknght.app-lib.test/with-mail-capture [mailbox])
                                          (cljs.test/is [comparable?
                                                         dgknght.app-lib.test-assertions/seq-of-maps-like?])
                                          (dgknght.app-lib.test/with-mail-capture [mailbox])

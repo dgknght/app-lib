@@ -80,15 +80,9 @@
            (slurp body))
         "the body is constructed from the parts")))
 
-(defn- send-mail [_])
+(defn- send-mail [_msg])
 
-(deftest intercept-emails
-  (t/with-mail-capture
-    [mailbox dgknght.app-lib.test-test/send-mail 0]
-
-    (send-mail {:body "Test"})
-    (let [[m :as ms] @mailbox]
-      (is (= 1 (count ms)) "The message is intercepted")
-      (is (= {:body "Test"}
-             m)
-          "The message is preserved")) ))
+(deftest capture-mail
+  (t/with-mail-capture [mailbox send-mail 0]
+    (send-mail :test)
+    (is (= [:test] @mailbox))))
