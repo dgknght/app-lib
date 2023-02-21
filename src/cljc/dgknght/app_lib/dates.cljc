@@ -91,6 +91,7 @@
   (let [today (t/today)]
     (case desc
       "today"                   today
+      "tomorrow"                (t/plus today (t/days 1))
       "yesterday"               (t/minus today (t/days 1))
       "start-of-this-year"      (t/local-date (t/year today) 1 1)
       "end-of-this-year"        (t/local-date (t/year today) 12 31)

@@ -20,7 +20,10 @@
   (is (auth/allowed? model ::auth/update user)
       "Yields true if the user has permission")
   (is (not (auth/allowed? model ::auth/update other-user))
-      "Yields false if the user does not have permission"))
+      "Yields false if the user does not have permission")
+  (is (thrown?
+        java.lang.RuntimeException
+        (auth/allowed? model ::auth/update (storage/tag {} ::order)))))
 
 (deftest authorize-an-action
   (is (auth/authorize model ::auth/update user)

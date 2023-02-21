@@ -18,7 +18,16 @@
 
 (deftest unserialize-a-local-date
   (is (.equals (t/local-date 2019 3 2)
-               (web/unserialize-date "2019-03-02"))))
+               (web/unserialize-date "2019-03-02"))
+      "A well-formatted string can be converted into a date")
+  (is (.equals (t/local-date 2020 3 2)
+               (t/do-at
+                 (t/date-time 2020 3 1 12 30)
+                 (web/unserialize-date "tomorrow")))
+      "A relative date can be specified")
+  (is (= (t/local-date 2019 3 2)
+         (web/unserialize-date (t/local-date 2019 3 2)))
+      "A date is returned as-is"))
 
 (deftest serialize-a-date-time
   (is (= "2019-03-02T12:34:56Z"
@@ -38,6 +47,11 @@
        date :year-month-day "2019-03-02"
        date "M/d" "3/2"
        date (tf/formatters :year-month) "2019-03")))
+
+(deftest unformat-a-date
+  (is (.equals (t/local-date 2020 3 2)
+               (web/unformat-date "3/2/2020")))
+  (is (nil? (web/unformat-date "notadate"))))
 
 (deftest format-a-date-time
   (is (= "3/2/2019 12:34 pm" (web/format-date-time (t/date-time 2019 3 2 12 34 56))))
