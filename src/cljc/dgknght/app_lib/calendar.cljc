@@ -106,7 +106,8 @@
 
 (defn- prepare-opts
   [opts]
-  (-> (merge defaults opts)
+  (-> defaults
+      (merge opts)
       ensure-year-month))
 
 (defn init
