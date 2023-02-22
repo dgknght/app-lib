@@ -13,11 +13,6 @@
   #?(:clj (apply clojure.core/format msg args)
      :cljs (apply gstr/format msg args)))
 
-(defn trace
-  [msg]
-  #?(:clj (pprint msg)
-     :cljs (.log js/console (prn-str msg))))
-
 (def boolean-values #{"true" "1" "y" "yes" "t"})
 
 (defn ensure-string

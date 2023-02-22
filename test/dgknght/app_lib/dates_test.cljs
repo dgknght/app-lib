@@ -24,10 +24,12 @@
   (are [input expected] (= expected
                            (serialize-interval
                              (dates/parse-interval input)))
-       "2015-03" {:start "2015-03-01"
-                  :end   "2015-04-01"}
-       "2015"    {:start "2015-01-01"
-                  :end   "2016-01-01"}))
+       "2015-03-02" {:start "2015-03-02"
+                     :end   "2015-03-03"}
+       "2015-03"    {:start "2015-03-01"
+                     :end   "2015-04-01"}
+       "2015"       {:start "2015-01-01"
+                     :end   "2016-01-01"}))
 
 (deftest get-a-sequence-of-intervals
   (is (= [{:start "2015-01-01"
@@ -94,3 +96,19 @@
         "nil is ignored")
     (is (nil? (dates/latest))
         "No dates yields nil")))
+
+(deftest create-a-period
+  (are [input-type input-count expected] (= expected
+                                            (dates/period input-type
+                                                          input-count))
+       :year  1 (t/years 1)
+       :month 2 (t/months 2)
+       :week  3 (t/weeks 3)))
+
+(deftest generate-nominal-keys
+  (is (= #{:created-before
+           :created-at-or-before
+           :created-after
+           :created-at-or-after
+           :created-at}
+         (set (dates/nominal-keys :created-at)))))

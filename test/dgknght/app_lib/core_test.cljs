@@ -52,6 +52,20 @@
                            inc))
       "The map is not modified if the key is not present"))
 
+(deftest conditionally-update-in-deeply
+  (is (= [:or {:one 1} {:two 2}]
+         (lib/deep-update-in-if [:or {:one 1} {:two 1}]
+                                :two
+                                inc)))
+  (is (= {:two 2}
+         (lib/deep-update-in-if {:two 1}
+                                :two
+                                inc)))
+  (is (= '(:one)
+         (lib/deep-update-in-if '(:one)
+                                :two
+                                inc))))
+
 (deftest assoc-if-value-is-present
   (are [m k v expected] (= expected (lib/assoc-if m k v))
        {} :value 1   {:value 1}
@@ -84,7 +98,7 @@
                                  {:description "test"}]]
                            :reconciled))))
 
-(deftest identify-presence-of-a-value
+(deftest check-for-the-presence-of-a-value
   (is (not (lib/present? nil)))
   (is (not (lib/present? "")))
   (is (not (lib/present? [])))
@@ -97,6 +111,26 @@
   (is (lib/present? #{1}))
   (is (lib/present? '(1)))
   (is (lib/present? {:one 1})))
+
+(deftest get-the-presence-of-a-value
+  (is (nil? (lib/presence ""))
+      "An empty string has no presence")
+  (is (nil? (lib/presence []))
+      "An empty vector has no presence")
+  (is (nil? (lib/presence '()))
+      "An empty list has no presence")
+  (is (nil? (lib/presence {}))
+      "An empty map has no presence")
+  (is (nil? (lib/presense #{}))
+      "An empty set has no presence")
+  (is (= "one" (lib/presence "one"))
+      "A non-empty string has presence")
+  (is (= [:one] (lib/presence [:one]))
+      "A non-empty vector has presence")
+  (is (= {:one 1} (lib/presence {:one 1}))
+      "A non-empty map has presence")
+  (is (= #{:one} (lib/presence #{:one}))
+      "A non-empty set has presence"))
 
 (deftest ensure-a-string-value
   (is (= "test" (lib/ensure-string "test")))
@@ -175,7 +209,7 @@
   (is (= {:one [1 2]}
          (update-in {:one 1}
                     [:one]
-                    (lib/fscalar (fnil conj []))
+                    (lib/fscalar conj)
                     2))
       "A scalar value is replaced by a collection containing the value, then the value is added")
   (is (= {:one [2]}

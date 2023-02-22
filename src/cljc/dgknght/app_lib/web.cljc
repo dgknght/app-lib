@@ -1,6 +1,6 @@
 (ns dgknght.app-lib.web
   (:require [clojure.string :as string]
-            [dgknght.app-lib.core :refer [trace]]
+            #?(:clj [clojure.tools.logging :as log])
             [dgknght.app-lib.dates :as dates]
             #?(:cljs [dgknght.app-lib.time :as tm])
             #?(:clj [clj-time.format :as tf]
@@ -60,8 +60,8 @@
 
 (defn unserialize-date-time [s]
   (let [f #(when (seq s) (tf/parse (tf/formatters :date-time-no-ms) s))]
-    #?(:clj (try (f) (catch Exception e (trace {:parse-date-time-error e})))
-       :cljs (try (f) (catch js/Error e (trace {:parse-date-time-error e}))))))
+    #?(:clj (try (f) (catch Exception e (log/debugf "Unable to parse date time \"%s\": %s" s (.getMessage e))))
+       :cljs (try (f) (catch js/Error e (.warn js/console (str "Unable to parse date time \"" s "\": " (.-message e))))))))
 
 (defn serialize-time
   [local-time]

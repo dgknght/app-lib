@@ -188,17 +188,6 @@
    "on-or-after"  :>=
    "at-or-after"  :>=})
 
-(defn nominative-variations
-  [key-base]
-  (let [str-key (name key-base)]
-    (map #(keyword (str str-key %))
-         [""
-          "-before"
-          "-on-or-before"
-          "-at-or-before"
-          "-after"
-          "-on-or-after"])))
-
 (defn- symbolic-key
   [key-base k value]
   (let [key-suffix (string/replace (name k) (str key-base "-") "")

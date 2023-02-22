@@ -18,14 +18,14 @@
          "A year is parsed as the first and last dates of the year"))
 
 (deftest parse-an-interval
-  (is (= (t/interval (t/date-time 2015 3 1)
-                     (t/date-time 2015 4 1))
-         (dates/parse-interval "2015-03"))
-      "A year-month yields an interval for that month")
-  (is (= (t/interval (t/date-time 2015 1 1)
-                     (t/date-time 2016 1 1))
-         (dates/parse-interval "2015"))
-      "A year yields an interval for that month"))
+  (are [input expected] (= expected
+                           (dates/parse-interval input))
+       "2015-03-02" (t/interval (t/date-time 2015 3 2)
+                                (t/date-time 2015 3 3)) 
+       "2015-03"    (t/interval (t/date-time 2015 3 1)
+                                (t/date-time 2015 4 1))
+       "2015"       (t/interval (t/date-time 2015 1 1)
+                                (t/date-time 2016 1 1))))
 
 (deftest get-a-sequence-of-intervals
   (is (= [(t/interval (t/date-time 2015 1 1)
@@ -134,3 +134,19 @@
          :start-on
          {:start-on-or-after date
           :start-on-or-before other-date})))
+
+(deftest create-a-period
+  (are [input-type input-count expected] (= expected
+                                            (dates/period input-type
+                                                          input-count))
+       :year  1 (t/years 1)
+       :month 2 (t/months 2)
+       :week  3 (t/weeks 3)))
+
+(deftest generate-nominal-keys
+  (is (= #{:created-before
+           :created-at-or-before
+           :created-after
+           :created-at-or-after
+           :created-at}
+         (set (dates/nominal-keys :created-at)))))
