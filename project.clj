@@ -37,7 +37,9 @@
                                    :optimizations :none}}]}
   :doo {:build "test"
         :alias {:default [:firefox-headless]}}
-  :cloverage {:ns-exclude-regex [#"dgknght.app-lib.client-macros"
+  :cloverage {:fail-threshold 90
+              :high-watermark 90
+              :ns-exclude-regex [#"dgknght.app-lib.client-macros"
                                  #"dgknght.app-lib.forms-validation"
                                  #"dgknght.app-lib.json-encoding"
                                  #"dgknght.app-lib.test-assertions.cljs"

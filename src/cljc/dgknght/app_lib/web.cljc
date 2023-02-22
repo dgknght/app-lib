@@ -104,8 +104,8 @@
   "M/d/yyyy h:mm a")
 
 (defn format-date-time
-  ([dt] (format-date-time default-format-spec dt))
-  ([format-spec dt]
+  ([dt] (format-date-time dt default-format-spec))
+  ([dt format-spec]
    (when dt
      (let [formatter (if (string? format-spec)
                        (tf/formatter format-spec)
@@ -113,10 +113,11 @@
        (tf/unparse formatter dt)))))
 
 (defn reformat-date-time
-  [format-spec dt-str]
-  (->> dt-str
-       (tf/parse (tf/formatters :date-time-no-ms dt-str))
-       (format-date-time format-spec)))
+  ([dt-str] (reformat-date-time dt-str default-format-spec))
+  ([dt-str format-spec]
+   (format-date-time (tf/parse (tf/formatters :date-time-no-ms dt-str)
+                               dt-str)
+                     format-spec)))
 
 (defn format-time
   [local-time]

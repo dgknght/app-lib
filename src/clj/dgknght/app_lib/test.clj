@@ -100,3 +100,13 @@
     (->> ms
          (map #(get-in % [attr]))
          set)))
+
+(defmacro with-log-capture
+  [bindings & body]
+  `(let [logged# (atom [])
+         f# (fn* [~(first bindings)]
+                 ~@body)]
+     (with-redefs [clojure.tools.logging/log*
+                   (fn [& args#]
+                     (swap! logged# conj args#))]
+       (f# logged#))))

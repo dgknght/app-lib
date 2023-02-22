@@ -31,6 +31,7 @@
                                          (dgknght.app-lib.test/with-mail-capture [mailbox])
                                          (cljs.test/is [comparable?
                                                         dgknght.app-lib.test-assertions/seq-of-maps-like?])
+                                         (dgknght.app-lib.test/with-log-capture [logged])
                                          (dgknght.app-lib.test/with-mail-capture [mailbox])
                                          (dgknght.app-lib.web-mocks/with-web-mocks [calls])]}
            :unresolved-var {:exclude [dgknght.app-lib.test-assertions/seq-of-maps-like?

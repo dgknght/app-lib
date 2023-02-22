@@ -75,9 +75,6 @@
 (defn- error-response
   [error]
   (log/errorf error "Unexpected error handling request")
-  ; TODO: I think this below is redundant
-  (doseq [f (.getStackTrace error)]
-    (log/error (.toString f)))
   internal-server-error)
 
 (defn wrap-api-exception
@@ -85,9 +82,15 @@
   (fn [req]
     (try (handler req)
          (catch clojure.lang.ExceptionInfo e
-           (case (auth/opaque? e)
-             false forbidden
-             true not-found
-             (error-response e)))
+           (let [opaque? (auth/opaque? e)]
+             (cond
+               (nil? opaque?)
+               (error-response e)
+
+               opaque?
+               not-found
+
+               :else
+               forbidden)))
          (catch Exception e
            (error-response e)))))
