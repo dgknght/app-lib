@@ -1,6 +1,6 @@
 (ns dgknght.app-lib.web
   (:require [clojure.string :as string]
-            [dgknght.app-lib.core :refer [trace]]
+            #?(:clj [clojure.tools.logging :as log])
             [dgknght.app-lib.dates :as dates]
             #?(:cljs [dgknght.app-lib.time :as tm])
             #?(:clj [clj-time.format :as tf]
@@ -60,8 +60,8 @@
 
 (defn unserialize-date-time [s]
   (let [f #(when (seq s) (tf/parse (tf/formatters :date-time-no-ms) s))]
-    #?(:clj (try (f) (catch Exception e (trace {:parse-date-time-error e})))
-       :cljs (try (f) (catch js/Error e (trace {:parse-date-time-error e}))))))
+    #?(:clj (try (f) (catch Exception e (log/debugf "Unable to parse date time \"%s\": %s" s (.getMessage e))))
+       :cljs (try (f) (catch js/Error e (.warn js/console (str "Unable to parse date time \"" s "\": " (.-message e))))))))
 
 (defn serialize-time
   [local-time]
@@ -104,8 +104,8 @@
   "M/d/yyyy h:mm a")
 
 (defn format-date-time
-  ([dt] (format-date-time default-format-spec dt))
-  ([format-spec dt]
+  ([dt] (format-date-time dt default-format-spec))
+  ([dt format-spec]
    (when dt
      (let [formatter (if (string? format-spec)
                        (tf/formatter format-spec)
@@ -113,10 +113,11 @@
        (tf/unparse formatter dt)))))
 
 (defn reformat-date-time
-  [format-spec dt-str]
-  (->> dt-str
-       (tf/parse (tf/formatters :date-time-no-ms dt-str))
-       (format-date-time format-spec)))
+  ([dt-str] (reformat-date-time dt-str default-format-spec))
+  ([dt-str format-spec]
+   (format-date-time (tf/parse (tf/formatters :date-time-no-ms dt-str)
+                               dt-str)
+                     format-spec)))
 
 (defn format-time
   [local-time]

@@ -13,11 +13,6 @@
   #?(:clj (apply clojure.core/format msg args)
      :cljs (apply gstr/format msg args)))
 
-(defn trace
-  [msg]
-  #?(:clj (pprint msg)
-     :cljs (.log js/console (prn-str msg))))
-
 (def boolean-values #{"true" "1" "y" "yes" "t"})
 
 (defn ensure-string
@@ -178,9 +173,10 @@
 
 (defmethod prune-to :sequence
   [target source]
-  (let [ks (set (mapcat keys source))]
-    (map-indexed #(prune-map %2 (nth source %1) ks)
-         target)))
+  (let [ks (set (mapcat keys source))
+        src (concat source (repeat {}))]
+    (map-indexed #(prune-map %2 (nth src %1) ks)
+                 target)))
 
 (defmethod prune-to :default
   [target _source]

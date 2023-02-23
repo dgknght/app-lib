@@ -18,8 +18,10 @@
            (filter #(match? req (first %)))
            (map #((second %) req))
            first)
-      (println "Unable to match the request: " (prn-str req))
-      (println "Mocks " (prn-str mocks))))
+      (do
+        (println "Unable to match the request: " (prn-str req))
+        (println "Mocks " (prn-str mocks))
+        nil)))
 
 (defn request-handler
   [calls mocks]

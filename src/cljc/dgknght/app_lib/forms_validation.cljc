@@ -6,8 +6,6 @@
             #?(:cljs [goog.string :as gstr])
             #?(:cljs [cljs.core :refer [Keyword PersistentVector]])
             #?(:cljs [cljs.core.async.impl.channels :refer [ManyToManyChannel]])
-            #?(:clj [clojure.pprint :refer [pprint]]
-               :cljs [cljs.pprint :refer [pprint]])
             [dgknght.app-lib.inflection :refer [humanize]]
             [dgknght.app-lib.core :as lib])
   #?(:clj (:import [clojure.lang
@@ -123,10 +121,6 @@
                (val-xf field
                        ::matches
                        (fn [m]
-                         (pprint {:field (get-in m field)
-                                  :other-field (get-in m other-field)
-                                  := (= (get-in m field)
-                                        (get-in m other-field))})
                          (= (get-in m field)
                             (get-in m other-field)))
                        (format "%%s must match %s."

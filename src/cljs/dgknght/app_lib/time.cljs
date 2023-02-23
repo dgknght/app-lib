@@ -10,7 +10,11 @@
     "Returns a new time the specified number of minutes after the instance")
   (->vector
     [this]
-    "Returns the hour, minute, and second in a vector"))
+    "Returns the hour, minute, and second in a vector")
+
+  (equals
+    [this other]
+    "Returns a boolean value indicating whether or not the instance is equivalent to the other time"))
 
 (defrecord Time [hour minute second]
   Timeish
@@ -19,6 +23,11 @@
       (Time. (+ hour (quot new-m 60))
              (mod new-m 60)
              second)))
+
+  (equals [_ other]
+    (and (= hour (:hour other))
+         (= minute (:minute other))
+         (= second (:second other))))
 
   (->vector [_]
     [hour minute second]))

@@ -16,7 +16,7 @@ jobs:
     - name: Install dependencies
       run: lein deps
     - name: Run clj tests
-      run: lein test
+      run: lein cloverage
     - name: Install Karma CLI
       run: npm install -g karma-cli
     - name: Install other packages

@@ -7,18 +7,18 @@
 (derive ::update ::manage)
 (derive ::destroy ::manage)
 
-(defmulti allowed?
-  "Returns a truthy or falsey value indicating whether or not the
-  authenticated user is allowed to perform the specified
-  action on the specified model"
-  (fn [model action _user]
-    [(storage/tag model) action]))
-
 (defn- type-of
   [model-or-keyword]
   (if (keyword? model-or-keyword)
     model-or-keyword
     (storage/tag model-or-keyword)))
+
+(defmulti allowed?
+  "Returns a truthy or falsey value indicating whether or not the
+  authenticated user is allowed to perform the specified
+  action on the specified model"
+  (fn [model action _user]
+    [(type-of model) action]))
 
 (defmethod allowed? :default
   [model action _user]
@@ -41,6 +41,7 @@
                   :action action
                   :model (storage/tag model)
                   ::opaque? opaque?})))
+
 (def denied? (complement allowed?))
 
 (defn authorize

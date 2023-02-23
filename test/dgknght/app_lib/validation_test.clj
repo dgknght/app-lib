@@ -134,3 +134,51 @@
                 [:items 1 :index]
                 "Index must be an integer"
                 ::collection-model)))
+
+(deftest test-for-presence-of-an-error
+  (let [model-with-error {::v/errors {:first-name ["is required"]}
+                          :last-name "Doe" }]
+    (testing "The entire model"
+      (is (v/has-error? model-with-error))
+      (is (not (v/has-error? {})))
+      (is (not (v/has-error? {::v/errors {}}))))
+    (testing "A single attribute"
+      (is (v/has-error? model-with-error :first-name))
+      (is (v/has-error? model-with-error [:first-name]))
+      (is (not (v/has-error? model-with-error :last-name)))
+      (is (not (v/has-error? model-with-error [:last-name]))))))
+
+(deftest test-for-validity
+  (let [model-with-error {::v/errors {:first-name ["is required"]}
+                          :last-name "Doe" }]
+    (testing "The entire model"
+      (is (= false (v/valid? model-with-error)))
+      (is (nil? (v/valid? {})))
+      (is (v/valid? {::v/errors {}})))))
+
+(deftest test-a-minimum-length
+  (is (v/min-length? 5 "abcde"))
+  (is (not (v/min-length? 5 "abcd"))))
+
+(deftest extra-error-messages
+  (let [model {:first-name "John"
+               ::v/errors {:last-name ["is required"]}}]
+    (is (= ["is required"] (v/error-messages model :last-name)))
+    (is (= ["is required"] (v/error-messages model [:last-name])))))
+
+(deftest wrap-validation-in-a-macro
+  (testing "a valid model"
+    (let [model {:name "John"}
+          body-called? (atom false)
+          res (v/with-validation model ::test-model
+                (reset! body-called? true)
+                ::result)]
+      (is (= ::result res) "The result of the body is returned")
+      (is @body-called? "The block is called with a valid model")))
+  (testing "an invalid model"
+    (let [model {}
+          body-called? (atom false)
+          res (v/with-validation model ::test-model
+                (reset! body-called? true))]
+      (is (v/has-error? res) "The result indicates invalid")
+      (is (not @body-called?) "The block is not called with a valid model"))))

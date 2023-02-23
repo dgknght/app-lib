@@ -39,14 +39,14 @@
 
 (defn called-with-headers?
   [msg form]
-  (let [expected (lib/safe-nth form 1)
-        spec (lib/safe-nth form 2)
-        calls (lib/safe-nth form 3)]
+  (let [spec (lib/safe-nth form 1)
+        calls (lib/safe-nth form 2)
+        expected (lib/safe-nth form 3)]
     `(let [matches# (filter #(matches-headers? % ~expected) (deref ~calls))
            pass?# (meets-spec? (count matches#) ~spec)]
-       (test/report {:expected {:headers ~expected
-                                :spec ~spec}
-                     :actual {:matches (count matches#)
-                              :calls (deref ~calls)}
-                     :message ~msg
-                     :type (if pass?# :pass :fail)}))))
+       {:expected {:headers ~expected
+                   :spec ~spec}
+        :actual {:matches (count matches#)
+                 :calls (deref ~calls)}
+        :message ~msg
+        :type (if pass?# :pass :fail)})))

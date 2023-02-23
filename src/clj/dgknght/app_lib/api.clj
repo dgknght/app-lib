@@ -3,25 +3,9 @@
   (:require [clojure.tools.logging :as log]
             [clojure.string :as string]
             [ring.util.response :as res]
-            [cheshire.generate :refer [add-encoder]]
             [dgknght.app-lib.authorization :as auth]
-            [dgknght.app-lib.web :refer [serialize-date
-                                         serialize-time
-                                         serialize-date-time]]
-            [dgknght.app-lib.validation :as v])
-  (:import [org.joda.time
-            LocalDate
-            LocalTime
-            DateTime]))
-
-(add-encoder LocalDate (fn [date g]
-                         (.writeString g (serialize-date date))))
-
-(add-encoder LocalTime (fn [local-time g]
-                         (.writeString g (serialize-time local-time))))
-
-(add-encoder DateTime (fn [date g]
-                        (.writeString g (serialize-date-time date))))
+            [dgknght.app-lib.validation :as v]
+            [dgknght.app-lib.json-encoding]))
 
 (defn response
   ([]
@@ -36,9 +20,8 @@
 (defn creation-response
   [model]
   (when (v/has-error? model)
-    (log/debugf "Unable to save the model %s %s: %s"
+    (log/infof "Unable to save the model %s: %s"
                 (meta model)
-                model
                 (string/join ", " (v/flat-error-messages model))))
   (response model (if (and (map? model)
                            (v/has-error? model))
@@ -92,8 +75,6 @@
 (defn- error-response
   [error]
   (log/errorf error "Unexpected error handling request")
-  (doseq [f (.getStackTrace error)]
-    (log/error (.toString f)))
   internal-server-error)
 
 (defn wrap-api-exception
@@ -101,9 +82,15 @@
   (fn [req]
     (try (handler req)
          (catch clojure.lang.ExceptionInfo e
-           (case (auth/opaque? e)
-             false forbidden
-             true not-found
-             (error-response e)))
+           (let [opaque? (auth/opaque? e)]
+             (cond
+               (nil? opaque?)
+               (error-response e)
+
+               opaque?
+               not-found
+
+               :else
+               forbidden)))
          (catch Exception e
            (error-response e)))))

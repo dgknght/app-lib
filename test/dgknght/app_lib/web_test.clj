@@ -17,8 +17,17 @@
          (web/serialize-date (t/local-date 2019 3 2)))))
 
 (deftest unserialize-a-local-date
+  (is (.equals (t/local-date 2019 3 2)
+               (web/unserialize-date "2019-03-02"))
+      "A well-formatted string can be converted into a date")
+  (is (.equals (t/local-date 2020 3 2)
+               (t/do-at
+                 (t/date-time 2020 3 1 12 30)
+                 (web/unserialize-date "tomorrow")))
+      "A relative date can be specified")
   (is (= (t/local-date 2019 3 2)
-         (web/unserialize-date "2019-03-02"))))
+         (web/unserialize-date (t/local-date 2019 3 2)))
+      "A date is returned as-is"))
 
 (deftest serialize-a-date-time
   (is (= "2019-03-02T12:34:56Z"
@@ -38,9 +47,21 @@
        date "M/d" "3/2"
        date (tf/formatters :year-month) "2019-03")))
 
+(deftest unformat-a-date
+  (is (.equals (t/local-date 2020 3 2)
+               (web/unformat-date "3/2/2020")))
+  (is (nil? (web/unformat-date "notadate"))))
+
 (deftest format-a-date-time
-  (is (= "3/2/2019 12:34 PM" (web/format-date-time (t/date-time 2019 3 2 12 34 56))))
+  (is (= "3/2/2019 12:34 PM"
+         (web/format-date-time (t/date-time 2019 3 2 12 34 56))))
+  (is (= "2019-03-02"
+         (web/format-date-time (t/date-time 2019 3 2 12 34 56) :date)))
   (is (= nil (web/format-date-time nil))))
+
+(deftest reformat-a-date-time
+  (is (= "3/2/2020 1:00 AM"
+         (web/reformat-date-time "2020-03-02T01:00:00Z"))))
 
 (deftest format-a-decimal
   (is (= "1,234.50" (web/format-decimal 1234.5M))
@@ -51,3 +72,19 @@
 
 (deftest format-a-currency
   (is (= "$12.34" (web/format-currency 12.34M))))
+
+(deftest serialize-a-time
+  (is (= "12:30:00"
+         (web/serialize-time (t/local-time 12 30)))))
+
+(deftest unserialize-a-time
+  (is (= (t/local-time 12 30 15)
+         (web/unserialize-time "12:30:15"))))
+
+(deftest format-a-time
+  (is (= "12:30"
+         (web/format-time (t/local-time 12 30 15)))))
+
+(deftest unformat-a-time
+  (is (= (t/local-time 12 30)
+         (web/unformat-time "12:30"))))

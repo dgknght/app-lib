@@ -5,6 +5,8 @@
                                                            url-like?
                                                            not-url-like?
                                                            called?
+                                                           called-with-headers?
+                                                           not-called?
                                                            seq-of-maps-like?
                                                            seq-with-map-like?
                                                            seq-with-no-map-like?
@@ -15,6 +17,7 @@
                                                            http-success?
                                                            http-created?
                                                            http-no-content?
+                                                           http-redirect-to?
                                                            http-bad-request?
                                                            http-unauthorized?
                                                            http-forbidden?
@@ -26,9 +29,11 @@
                                                            http-response-with-cookie?
                                                            http-response-without-cookie?
                                                            same-date?])
+                                         (dgknght.app-lib.test/with-mail-capture [mailbox])
                                          (cljs.test/is [comparable?
-                                                        dgknght.app-lib.test-assertions/seq-of-maps-like?
-                                                        ])
+                                                        dgknght.app-lib.test-assertions/seq-of-maps-like?])
+                                         (dgknght.app-lib.test/with-log-capture [logged])
+                                         (dgknght.app-lib.test/with-mail-capture [mailbox])
                                          (dgknght.app-lib.web-mocks/with-web-mocks [calls])]}
            :unresolved-var {:exclude [dgknght.app-lib.test-assertions/seq-of-maps-like?
                                       dgknght.app-lib.test-assertions/comparable?
@@ -42,6 +47,7 @@
                                       dgknght.app-lib.test-assertions/http-success?
                                       dgknght.app-lib.test-assertions/http-created?
                                       dgknght.app-lib.test-assertions/http-no-content?
+                                      dgknght.app-lib.test-assertions/http-redirect-to?
                                       dgknght.app-lib.test-assertions/http-bad-request?
                                       dgknght.app-lib.test-assertions/http-unauthorized?
                                       dgknght.app-lib.test-assertions/http-forbidden?
@@ -54,6 +60,8 @@
                                       dgknght.app-lib.test-assertions/mime-msg-not-containing?
                                       dgknght.app-lib.test-assertions/http-response-with-cookie?
                                       dgknght.app-lib.test-assertions/http-response-without-cookie?
-                                      dgknght.app-lib.test-assertions/same-date?]}
+                                      dgknght.app-lib.test-assertions/same-date?
+                                      dgknght.app-lib.web-mocks/called?
+                                      dgknght.app-lib.web-mocks/called-with-headers?]}
            :namespace-name-mismatch {:level :off}}
  :output {:linter-name true}}

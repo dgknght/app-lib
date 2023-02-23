@@ -73,6 +73,13 @@
   (is (http-no-content? {:status 204})
       "Status 204 is no content"))
 
+(deftest assert-an-http-response-is-a-redirect
+  (is (http-redirect-to?
+        "https://mysite.com/over-here"
+        {:status 302
+         :headers {"Location" "https://mysite.com/over-here"}})
+      "Status 302 is a redirect"))
+
 (deftest assert-an-http-response-indicates-bad-request
   (is (http-bad-request? {:status 400})
       "Status 400 is bad request"))

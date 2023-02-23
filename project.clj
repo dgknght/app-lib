@@ -21,7 +21,8 @@
                  [cljs-http "0.1.46"]
                  [ring "1.9.0"]]
   :plugins [[lein-cljsbuild "1.1.8"]
-            [lein-doo "0.1.11"]]
+            [lein-doo "0.1.11"]
+            [lein-cloverage "1.2.4"]]
   :source-paths ["src/clj" "src/cljc" "src/cljs"]
   :clean-targets [:target-path :compile-path "out"]
   :cljsbuild {:builds [{:source-paths ["src/cljs" "src/cljc"]
@@ -36,6 +37,14 @@
                                    :optimizations :none}}]}
   :doo {:build "test"
         :alias {:default [:firefox-headless]}}
+  :cloverage {:fail-threshold 90
+              :high-watermark 90
+              :ns-exclude-regex [#"dgknght.app-lib.client-macros"
+                                 #"dgknght.app-lib.forms-validation"
+                                 #"dgknght.app-lib.json-encoding"
+                                 #"dgknght.app-lib.test-assertions.cljs"
+                                 #"dgknght.app-lib.test-cljs"
+                                 #"dgknght.app-lib.web-mocks.cljs"]}
   :prep-tasks ["compile" ["cljsbuild" "once"]]
   :jvm-opts  ["-Duser.timezone=UTC"
               "-Duser.country=US"

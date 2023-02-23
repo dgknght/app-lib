@@ -236,7 +236,8 @@
 (defn valid?
   "Returns false if the model has any validation errors"
   [model]
-  (-> model ::errors seq not))
+  (when-let [errors (::errors model)]
+    (empty? errors)))
 
 (defn error-messages
   "Returns the errors from the specified model. If given only a model,
