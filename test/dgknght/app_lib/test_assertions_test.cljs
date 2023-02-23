@@ -85,6 +85,13 @@
         {:status 204})
       "Status 204 is no content"))
 
+(deftest assert-an-http-response-is-a-redirect
+  (is (dgknght.app-lib.test-assertions/http-redirect-to?
+        "https://mysite.com/over-here"
+        {:status 302
+         :headers {"Location" "https://mysite.com/over-here"}})
+      "Status 302 is a redirect"))
+
 (deftest assert-an-http-response-indicates-bad-request
   (is (dgknght.app-lib.test-assertions/http-bad-request?
         {:status 400})

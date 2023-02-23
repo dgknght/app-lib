@@ -26,8 +26,14 @@
             (is (dgknght.app-lib.web-mocks/called? :once calls {:url #"mysite"
                                                                 :method :get})
                   "The request can be verified by url and method")
+            (is (dgknght.app-lib.web-mocks/called-with-headers?
+                  :once
+                  calls
+                  {"content-type" "application/json"}))
           (done))
-        (http/get "https://mysite.com" {:channel ch})))))
+        (http/get "https://mysite.com" {:channel ch
+                                        :headers ["content-type" "application/json"]
+                                        :query-string "a=1"})))))
 
 #_(deftest mock-a-get-request-with-implicit-channel
   (async
