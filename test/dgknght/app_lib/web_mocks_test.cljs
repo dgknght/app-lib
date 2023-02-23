@@ -32,7 +32,7 @@
                   {"content-type" "application/json"}))
           (done))
         (http/get "https://mysite.com" {:channel ch
-                                        :headers ["content-type" "application/json"]
+                                        :headers {"content-type" "application/json"}
                                         :query-string "a=1"})))))
 
 #_(deftest mock-a-get-request-with-implicit-channel

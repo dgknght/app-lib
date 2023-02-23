@@ -60,6 +60,8 @@
                                       dgknght.app-lib.test-assertions/mime-msg-not-containing?
                                       dgknght.app-lib.test-assertions/http-response-with-cookie?
                                       dgknght.app-lib.test-assertions/http-response-without-cookie?
-                                      dgknght.app-lib.test-assertions/same-date?]}
+                                      dgknght.app-lib.test-assertions/same-date?
+                                      dgknght.app-lib.web-mocks/called?
+                                      dgknght.app-lib.web-mocks/called-with-headers?]}
            :namespace-name-mismatch {:level :off}}
  :output {:linter-name true}}

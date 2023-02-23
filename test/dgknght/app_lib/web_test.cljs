@@ -27,8 +27,8 @@
                  (fn []
                    (web/unserialize-date "tomorrow"))))
       "A relative date can be specified")
-  (is (= (t/local-date 2019 3 2)
-         (web/unserialize-date (t/local-date 2019 3 2)))
+  (is (.equals (t/local-date 2019 3 2)
+               (web/unserialize-date (t/local-date 2019 3 2)))
       "A date is returned as-is"))
 
 (deftest serialize-a-date-time
@@ -61,7 +61,7 @@
 
 (deftest reformat-a-date-time
   (is (= "3/2/2020 1:00 am"
-         (web/reformat-date-time "03/02/2020 01:00 am"))))
+         (web/reformat-date-time "2020-03-02T01:00:00Z"))))
 
 (deftest format-a-decimal
   (is (= "1,234.50" (web/format-decimal 1234.5M))
@@ -82,9 +82,9 @@
          (web/unserialize-time "12:30:15"))))
 
 (deftest format-a-time
-  (is (= "12:30"
+  (is (= "12:30 PM"
          (web/format-time (tm/time 12 30 15)))))
 
 (deftest unformat-a-time
-  (is (= (tm/time 12 30)
-         (web/unformat-time "12:30"))))
+  (is (tm/equals (tm/time 12 30)
+                 (web/unformat-time "12:30 PM"))))

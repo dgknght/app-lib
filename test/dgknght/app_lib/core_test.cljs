@@ -121,7 +121,7 @@
       "An empty list has no presence")
   (is (nil? (lib/presence {}))
       "An empty map has no presence")
-  (is (nil? (lib/presense #{}))
+  (is (nil? (lib/presence #{}))
       "An empty set has no presence")
   (is (= "one" (lib/presence "one"))
       "A non-empty string has presence")
