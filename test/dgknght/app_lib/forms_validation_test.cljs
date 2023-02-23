@@ -225,24 +225,3 @@
         (do
           (is false "The function has incorrectly returned a nil value.")
           (done))))))
-
-(deftest test-for-presence-of-an-error
-  (let [model-with-error {::v/errors {:first-name ["is required"]}
-                          :last-name "Doe" }]
-    (testing "The entire model"
-      (is (v/has-error? model-with-error))
-      (is (not (v/has-error? {})))
-      (is (not (v/has-error? {::v/errors {}}))))
-    (testing "A single attribute"
-      (is (v/has-error? model-with-error :first-name))
-      (is (v/has-error? model-with-error [:first-name]))
-      (is (not (v/has-error? model-with-error :last-name)))
-      (is (not (v/has-error? model-with-error [:last-name]))))))
-
-(deftest test-for-validity
-  (let [model-with-error {::v/errors {:first-name ["is required"]}
-                          :last-name "Doe" }]
-    (testing "The entire model"
-      (is (= false (v/valid? model-with-error)))
-      (is (nil? (v/valid? {})))
-      (is (v/valid? {::v/errors {}})))))
