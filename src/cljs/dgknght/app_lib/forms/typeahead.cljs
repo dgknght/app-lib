@@ -205,6 +205,16 @@
       (assoc-with-fn :on-change on-change)
       (assoc-with-fn :on-focus on-focus)))
 
+(defn- blur-handler
+  [{:keys [mode items model field text-value caption-fn find-fn]}]
+  (fn [_]
+    (when @items
+      (reset! items nil)
+      (if-let [v (get-in @model field)]
+        (when-not (= :direct mode)
+          (find-fn v #(reset! text-value (caption-fn %))))
+        (reset! text-value "")))))
+
 (defn elem
   [{:keys [model
            field
@@ -215,7 +225,8 @@
            on-change
            on-key-down
            on-focus]
-    {:keys [on-key-up]} :html}]
+    {:keys [on-key-up]} :html
+    :as opts}]
   (v/add-rules model field validations)
   [:input
    (merge {:id (->id field)}
@@ -229,4 +240,5 @@
                         #(when-not @items
                            (on-key-up %)))
            :on-change on-change
-           :on-focus on-focus})])
+           :on-focus on-focus
+           :on-blur (blur-handler opts)})])
