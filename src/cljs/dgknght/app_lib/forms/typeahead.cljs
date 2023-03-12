@@ -205,7 +205,7 @@
       (assoc-with-fn :on-change on-change)
       (assoc-with-fn :on-focus on-focus)))
 
-(defn- blur-handler
+(defn- blur-handler*
   [{:keys [mode items model field text-value caption-fn find-fn]}]
   (fn [_]
     (when @items
@@ -214,6 +214,12 @@
         (when-not (= :direct mode)
           (find-fn v #(reset! text-value (caption-fn %))))
         (reset! text-value "")))))
+
+(defn- blur-handler
+  [item]
+  #(.setTimeout js/window
+               (blur-handler* item)
+               250))
 
 (defn elem
   [{:keys [model
