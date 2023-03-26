@@ -2,7 +2,7 @@
   (:require [clojure.string :as string]
             [reagent.core :as r]
             [dgknght.app-lib.core :as lib]
-            [dgknght.app-lib.html :as html]
+            [dgknght.app-lib.dom :as dom]
             [dgknght.app-lib.forms-validation :as v]
             [dgknght.app-lib.forms.common :refer [->id
                                                   ->name]]))
@@ -112,7 +112,7 @@
          caption-fn identity}}]
   (fn [e]
     (if @items
-      (case (html/key-code e)
+      (case (dom/key-code e)
         :up           (swap! index #(-> (or % (count @items))
                                         dec
                                         (mod (count @items))))
@@ -128,7 +128,7 @@
                         (reset! items nil))
         nil)
       (when (and (not (seq @text-value))
-                 (#{:enter :tab} (html/key-code e)))
+                 (#{:enter :tab} (dom/key-code e)))
         (select-item nil)))))
 
 (defn- nil-search
@@ -145,7 +145,7 @@
            mode]
     :or {search-fn nil-search}}]
   (fn [e]
-    (let [raw-value (-> e html/target html/value)]
+    (let [raw-value (-> e dom/target dom/value)]
       (reset! text-value raw-value)
       (when (= :direct mode)
         (swap! model assoc-in field raw-value)

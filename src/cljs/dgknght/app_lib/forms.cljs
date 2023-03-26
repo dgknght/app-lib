@@ -10,7 +10,7 @@
                                          unformat-time]]
             [dgknght.app-lib.math :as math]
             [dgknght.app-lib.inflection :refer [humanize]]
-            [dgknght.app-lib.html :as html]
+            [dgknght.app-lib.dom :as dom]
             [dgknght.app-lib.bootstrap-icons :as icons]
             [dgknght.app-lib.calendar :as cal]
             [dgknght.app-lib.calendar-view :as calview]
@@ -100,10 +100,10 @@
                                                     (set? v) v
                                                     (nil? v) #{}
                                                     :else #{v})]
-                                        (if (html/checked? %)
+                                        (if (dom/checked? %)
                                           (conj v-set value)
                                           (disj v-set value)))))
-                  #(reset! value-atm (html/checked? %)))
+                  #(reset! value-atm (dom/checked? %)))
          id (if value
               (str (->id field) "-" value)
               (->id field))]
@@ -146,7 +146,7 @@
                                      :id id
                                      :checked (contains? (get-in @model field) value)
                                      :on-change (fn [e]
-                                                  (if (html/checked? e)
+                                                  (if (dom/checked? e)
                                                     (swap! model update-in field (fnil conj #{}) value)
                                                     (swap! model update-in field disj value)))
                                      :value value}]
@@ -198,7 +198,7 @@
                                    (v/validate model field)
                                    (v/set-custom-validity e @model field))
                         :on-change (fn [e]
-                                     (let [new-value (-> e html/target html/value)]
+                                     (let [new-value (-> e dom/target dom/value)]
                                        (swap! model assoc-in field new-value)
                                        (on-change new-value)))})]
         model
@@ -415,9 +415,9 @@
                      :type :button}
                     (icons/icon :calendar {:size :small})]
            :on-key-down (fn [e]
-                          (when (html/ctrl-key? e)
+                          (when (dom/ctrl-key? e)
                             (.preventDefault e)
-                            (when-let [[oper value] (case (html/key-code e)
+                            (when-let [[oper value] (case (dom/key-code e)
                                                       :left  [t/minus (t/days 1)]
                                                       :right [t/plus  (t/days 1)]
                                                       :up    [t/minus (t/months 1)]
