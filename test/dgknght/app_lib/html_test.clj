@@ -1,5 +1,5 @@
 (ns dgknght.app-lib.html-test
-  (:require [cljs.test :refer-macros [deftest is]]
+  (:require [clojure.test :refer [deftest is]]
             [dgknght.app-lib.html :as html]))
 
 (deftest make-html-for-a-raw-string
