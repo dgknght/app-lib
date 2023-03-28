@@ -251,28 +251,49 @@
     (doall (map nav-tab items))]))
 
 (defn- page-item
-  [index state]
+  [index state page-index-key]
   ^{:key (str "page-item-" index)}
-  [:li.page-item {:class (when (= index (get-in @state [:page-index]))
+  [:li.page-item {:class (when (= index (get-in @state page-index-key))
                            "active")}
    [:a.page-link {:href "#"
-                  :on-click #(swap! state assoc :page-index index)}
+                  :on-click #(swap! state assoc-in page-index-key index)}
+    (inc index)]])
+
+(defn- page-item-simple-state
+  [index page-index]
+  ^{:key (str "page-item-" index)}
+  [:li.page-item {:class (when (= index @page-index)
+                           "active")}
+   [:a.page-link {:href "#"
+                  :on-click #(reset! page-index index)}
     (inc index)]])
 
 (defn pagination
   "Creates navigation for paged data. Expects an derefable map with the following:
-     :total      - the total number of items in the data set
-     :page-index - the current page index (0-based)
-     :page-size  - the number of items per page"
-  [state]
-  (let [total (r/cursor state [:total])
-        page-size (r/cursor state [:page-size])]
-    (fn []
-      [:nav {:aria-label "Pagination"}
-       [:ul.pagination
-        (->> (range (Math/ceil (/ @total @page-size)))
-             (map #(page-item % state))
-             doall)]])))
+    :total      - the total number of items in the data set
+    :page-index - the current page index (0-based)
+    :page-size  - the number of items per page"
+  ([state] (pagination state {}))
+  ([state {:keys [total-key
+                  page-size-key
+                  page-index-key]
+           :or {total-key [:total]
+                page-size-key [:page-size]
+                page-index-key [:page-index]}}]
+   (let [total (r/cursor state total-key)
+         page-size (r/cursor state page-size-key)]
+     (fn []
+       [:nav {:aria-label "Pagination"}
+        [:ul.pagination
+         (->> (range (Math/ceil (/ @total @page-size)))
+              (map #(page-item % state page-index-key))
+              doall)]])))
+  ([total page-size page-index]
+   [:nav {:aria-label "Pagination"}
+      [:ul.pagination
+       (->> (range (Math/ceil (/ total page-size)))
+            (map #(page-item-simple-state % page-index))
+            doall)]]))
 
 (defn spinner
   ([] (spinner {}))

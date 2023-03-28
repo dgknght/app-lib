@@ -305,5 +305,5 @@
          doall) ]))
 
 (defn pagination
-  [state]
-  (bs-4/pagination state))
+  [& args]
+  (apply bs-4/pagination args))
