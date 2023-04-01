@@ -224,6 +224,10 @@
 
   If no validation rules are specified for the model, nil is returned."
   ([model]
+
+   (when-not @model
+     (.warn js/console "an attempt was made to validate a nil model"))
+
    (if-let [all-rules (get-rules model)]
      (let [xf (apply comp
                      (->> all-rules
