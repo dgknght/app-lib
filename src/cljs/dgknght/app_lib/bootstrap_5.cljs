@@ -283,7 +283,7 @@
                                                                   ::forms/presentation ::forms/element}))
    (bs-4/decorate-typeahead-list list-elem)
    [:div.invalid-feedback (v/validation-msg @model field)]])
- 
+
 (defn nav-tabs
   ([items]
    (nav-tabs {} items))
