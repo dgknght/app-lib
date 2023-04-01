@@ -63,5 +63,6 @@
                                       dgknght.app-lib.test-assertions/same-date?
                                       dgknght.app-lib.web-mocks/called?
                                       dgknght.app-lib.web-mocks/called-with-headers?]}
-           :namespace-name-mismatch {:level :off}}
+           :namespace-name-mismatch {:level :off}
+           :clojure-lsp/unused-public-var {:level :off}}
  :output {:linter-name true}}
