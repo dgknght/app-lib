@@ -221,10 +221,11 @@
 
 (defn textarea-elem
   ([model field] (textarea-elem model field {}))
-  ([model field options]
+  ([model field {:keys [validations] :as options}]
    (let [changed? (r/atom false)
          value (r/cursor model field)
          errors (make-reaction #(v/validation-msg model field))]
+     (v/add-rules model field validations)
      (fn []
        (decorate
          [:textarea
