@@ -57,6 +57,13 @@
                        request
                        (assoc :json-params resource)))))
 
+(defn put
+  ([path resource] (put path resource {}))
+  ([path resource options]
+   (http/put path (-> options
+                      request
+                      (assoc :json-params resource)))))
+
 (defn patch
   ([path resource] (patch path resource {}))
   ([path resource options]
@@ -66,8 +73,11 @@
 
 (defn delete
   ([path] (delete path {}))
-  ([path options]
-   (http/delete path (request options))))
+  ([path options] (delete path nil options))
+  ([path resource options]
+   (http/delete path (-> options
+                         request
+                         (assoc :json-params resource)))))
 
 (defn path
   [& segments]
