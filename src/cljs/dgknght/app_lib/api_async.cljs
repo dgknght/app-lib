@@ -24,14 +24,23 @@
     (throw (js/Error. error)))
   m)
 
+(defn- concatv
+  [& s]
+  (vec (apply concat s)))
+
+(defn- singular?
+  [v]
+  (and v
+       (not (sequential? v))))
+
 (defn- build-xf
   [{:keys [transform handle-ex extract-body]}]
   (apply comp
          (cond-> [(map extract-error)]
            handle-ex                      (conj (map throw-on-non-success))
            (#{true :before} extract-body) (conj (map extract-res-body))
-           (sequential? transform)        (concat transform)
-           transform                      (conj transform)
+           (sequential? transform)        (concatv transform)
+           (singular? transform)          (conj transform)
            (= :after extract-body)        (conj (map extract-res-body)))))
 
 (defn request
