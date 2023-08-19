@@ -3,7 +3,8 @@
   (:require [clojure.string :as string]
             [dgknght.app-lib.inflection :refer [title-case]]
             [dgknght.app-lib.notifications :as notify]
-            [dgknght.app-lib.html :refer [add-classes]]
+            [dgknght.app-lib.html :refer [add-class
+                                          add-classes]]
             [dgknght.app-lib.core :as lib]
             [dgknght.app-lib.forms :as forms]
             [dgknght.app-lib.forms-validation :as v]
@@ -113,7 +114,7 @@
         :style {:max-width "32px"}
         :alt "Profile Photo"}])]])
 
-(def icon icons/icon)
+(def ^{:deprecated "0.3.5"} icon icons/icon)
 
 (defn spinner
   ([] (spinner {}))
@@ -192,7 +193,7 @@
                  :aria-label "Close"}
     (icons/icon :x)]])
 
-(defn icon-with-text
+(defn ^{:deprecated "0.3.5"} icon-with-text
   ([icon-key text] (icon-with-text icon-key text {:size :small}))
   ([icon-key text {:keys [size] :as options}]
    [:span.d-flex.align-items-center
@@ -202,7 +203,7 @@
     [:span.ms-1
      text]]))
 
-(defn busy-button
+(defn ^{:deprecated "0.3.5"} busy-button
   [{:keys [html caption icon busy? disabled?]
     :or {disabled? (atom false)}}]
   (fn []
@@ -247,6 +248,18 @@
   [elem _model _field errors _options]
   (add-classes elem (cond-> ["form-select"]
                       (seq errors) (conj "is-invalid"))))
+
+(defmethod forms/decorate [::forms/text ::forms/element ::bootstrap-5]
+  [elem model _field errors {:keys [prepend append]}]
+  (let [decorated (cond-> (add-class elem "form-control")
+                    (v/valid? model) (add-class "is-valid")
+                    (seq errors) (add-class "is-invalid"))]
+    (if (or prepend append)
+      [:div.input-group.mb-3 {:class (when (seq errors) "is-invalid")} ; adding is-invalid here triggers bootstraps invalid-feedback visbility
+       prepend
+       decorated
+       append]
+      decorated)))
 
 (defmethod forms/decorate [::forms/text ::forms/field ::bootstrap-5]
   [[_ attr :as elem] model field errors {:keys [hide?] :as options}]
