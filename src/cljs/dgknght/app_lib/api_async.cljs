@@ -88,9 +88,7 @@
                          request
                          (assoc :json-params resource)))))
 
-(defn path
-  [& segments]
-  (apply api/path segments))
+(def path api/path)
 
 (defn multipart-params
   [req params]
