@@ -3,6 +3,9 @@
   (:require [dgknght.app-lib.client-macros :refer-macros [with-retry]]
             [goog.object :as obj]))
 
+(defn body []
+  (.-body js/document))
+
 (defn target
   [event]
   (.-target event))
@@ -75,6 +78,10 @@
       resolve-elem
       (obj/get "style")
       (obj/get k)))
+
+(defn set-attribute
+  [elem a-name a-value]
+  (.setAttribute elem a-name a-value))
 
 (defn debounce
   ([f] (debounce f 300))

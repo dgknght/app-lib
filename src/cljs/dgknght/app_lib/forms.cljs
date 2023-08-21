@@ -388,7 +388,9 @@
    :parse-fn parse-date})
 
 (defn date-input
-  [model field options]
+  [model field {:as options
+                :keys [icon]
+                :or {icon (icons/icon :calendar {:size :small})}}]
   (let [ctl-state (r/atom {:calendar (cal/init {:first-day-of-week :sunday
                                                 :selected (get-in @model field)})})
         visible? (r/cursor ctl-state [:visible?])]
@@ -414,7 +416,7 @@
           {:append [:button.btn.btn-secondary
                     {:on-click #(swap! ctl-state update-in [:visible?] not)
                      :type :button}
-                    (icons/icon :calendar {:size :small})]
+                    icon]
            :on-key-down (fn [e]
                           (when (dom/ctrl-key? e)
                             (.preventDefault e)

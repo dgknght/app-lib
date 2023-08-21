@@ -1,4 +1,6 @@
-(ns dgknght.app-lib.bootstrap-icons)
+(ns dgknght.app-lib.bootstrap-icons
+  "Do not use. Implement a project-specific strategy instead."
+  {:deprecated "0.3.5"})
 
 (def icons
   {:0-circle         [[:path {:d "M7.988 12.158c-1.851 0-2.941-1.57-2.941-3.99V7.84c0-2.408 1.101-3.996 2.965-3.996 1.857 0 2.935 1.57 2.935 3.996v.328c0 2.408-1.101 3.99-2.959 3.99ZM8 4.951c-1.008 0-1.629 1.09-1.629 2.895v.31c0 1.81.627 2.895 1.629 2.895s1.623-1.09 1.623-2.895v-.31c0-1.8-.621-2.895-1.623-2.895Z"}]
@@ -216,7 +218,7 @@
       apply-size
       apply-style))
 
-(defn icon
+(defn ^{:deprecated "0.3.5"} icon
   ([icon-key]
    (icon icon-key {}))
   ([icon-key options]
@@ -229,8 +231,7 @@
             elements)
      [:span.bg-danger options (str "Icon " (name icon-key) " not found")])))
 
-; TODO: this needs to be decorated or moved somewhere else
-(defn icon-with-text
+(defn ^{:deprecated "0.3.5"} icon-with-text
   [icon-key text]
   [:span.d-flex.align-items-center
    (icon icon-key)
