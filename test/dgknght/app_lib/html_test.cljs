@@ -1,5 +1,5 @@
 (ns dgknght.app-lib.html-test
-  (:require [cljs.test :refer-macros [deftest is]]
+  (:require [cljs.test :refer-macros [deftest is testing]]
             [dgknght.app-lib.html :as html]))
 
 (deftest make-html-for-a-raw-string
@@ -11,8 +11,12 @@
          (html/special-char :times))))
 
 (deftest make-an-empty-space
-  (is (= [:span {:dangerouslySetInnerHTML {:__html "&nbsp;"}}]
-         (html/space))))
+  (testing "space"
+    (is (= [:span {:dangerouslySetInnerHTML {:__html "&nbsp;"}}]
+           (html/space))))
+  (testing "nbps"
+    (is (= [:span {:dangerouslySetInnerHTML {:__html "&nbsp;"}}]
+           (html/nbsp)))))
 
 (deftest make-a-comment
   (is (= [:span {:dangerouslySetInnerHTML {:__html "<!-- my thoughts -->"}}]

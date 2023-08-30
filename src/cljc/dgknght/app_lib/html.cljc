@@ -20,6 +20,8 @@
   []
   (special-char :nbsp))
 
+(def nbsp space)
+
 (defn google-g
   ([] (google-g {}))
   ([options]
