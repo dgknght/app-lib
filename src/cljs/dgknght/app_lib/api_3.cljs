@@ -6,7 +6,7 @@
 
 (def default-opts
   {:headers {"Content-Type" "application/json"
-             "Accept" "application-json"}})
+             "Accept" "application/json"}})
 
 (def path og/path)
 
@@ -24,9 +24,9 @@
 
 (defn- build-xf
   [{:keys [pre-xf post-xf]}]
-  (->> [(pluralize pre-xf)
-        (map #(or (:body %) %))
-        (pluralize post-xf)]
+  (->> (pluralize pre-xf)
+       (concat [(map #(or (:body %) %))]
+               (pluralize post-xf))
        (filter identity)
        (apply comp)))
 
@@ -41,11 +41,33 @@
     (let [res (a/<! ch)]
       (callback res))))
 
+(defn- build-req
+  [opts]
+  (-> default-opts
+      (merge opts)
+      (update-in [:channel] #(when-not %
+                               (build-chan opts)))))
+
 (defn get
   [uri & {:as opts}]
   (wait-and-callback
-    (http/get uri (-> default-opts
-                      (merge opts)
-                      (update-in [:channel] #(when-not %
-                                               (build-chan opts)))))
+    (http/get uri (build-req opts))
+    opts))
+
+(defn post
+  [uri resource & {:as opts}]
+  (wait-and-callback
+    (http/post uri (assoc (build-req opts) :json-params resource))
+    opts))
+
+(defn patch
+  [uri resource & {:as opts}]
+  (wait-and-callback
+    (http/patch uri (assoc (build-req opts) :json-params resource))
+    opts))
+
+(defn delete
+  [uri & {:as opts}]
+  (wait-and-callback
+    (http/delete uri (build-req opts))
     opts))
