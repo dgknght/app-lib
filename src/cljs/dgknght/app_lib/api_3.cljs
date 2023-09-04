@@ -49,25 +49,29 @@
                                (build-chan opts)))))
 
 (defn get
-  [uri & {:as opts}]
-  (wait-and-callback
-    (http/get uri (build-req opts))
-    opts))
+  ([uri] (get uri {}))
+  ([uri opts]
+   (wait-and-callback
+     (http/get uri (build-req opts))
+     opts)))
 
 (defn post
-  [uri resource & {:as opts}]
-  (wait-and-callback
-    (http/post uri (assoc (build-req opts) :json-params resource))
-    opts))
+  ([uri resource] (post uri resource {}))
+  ([uri resource opts]
+   (wait-and-callback
+     (http/post uri (assoc (build-req opts) :json-params resource))
+     opts)))
 
 (defn patch
-  [uri resource & {:as opts}]
-  (wait-and-callback
-    (http/patch uri (assoc (build-req opts) :json-params resource))
-    opts))
+  ([uri resource] (patch uri resource {}))
+  ([uri resource opts]
+   (wait-and-callback
+     (http/patch uri (assoc (build-req opts) :json-params resource))
+     opts)))
 
 (defn delete
-  [uri & {:as opts}]
-  (wait-and-callback
-    (http/delete uri (build-req opts))
-    opts))
+  ([uri] (delete uri {}))
+  ([uri opts]
+   (wait-and-callback
+     (http/delete uri (build-req opts))
+     opts)))
