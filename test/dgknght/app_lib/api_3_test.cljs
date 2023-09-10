@@ -15,9 +15,7 @@
                                                 :body "OK"})))]
         (let [returned (api/get "https://myapp.com/"
                                 {:callback (fn [x]
-                                             (is (= {:status 200
-                                                     :body "OK"}
-                                                    x)
+                                             (is (= "OK" x)
                                                  "The HTTP response is passed to the callback fn")
                                              (done))})
               [c :as cs] @calls]

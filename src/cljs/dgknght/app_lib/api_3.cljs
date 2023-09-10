@@ -24,9 +24,9 @@
 
 (defn- build-xf
   [{:keys [pre-xf post-xf]}]
-  (->> (pluralize pre-xf)
-       (concat [(map #(or (:body %) %))]
-               (pluralize post-xf))
+  (->> (pluralize post-xf)
+       (concat (pluralize pre-xf)
+               [(map #(or (:body %) %))])
        (apply comp)))
 
 (defn- build-chan
