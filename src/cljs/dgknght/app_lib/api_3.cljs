@@ -27,7 +27,6 @@
   (->> (pluralize pre-xf)
        (concat [(map #(or (:body %) %))]
                (pluralize post-xf))
-       (filter identity)
        (apply comp)))
 
 (defn- build-chan
