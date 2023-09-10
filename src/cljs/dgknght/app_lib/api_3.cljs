@@ -17,21 +17,25 @@
 
 (defn- pluralize
   [x]
-  (when x
+  (if x
     (if (singular? x)
       [x]
-      x)))
+      x)
+    []))
 
 (defn- build-xf
   [{:keys [pre-xf post-xf]}]
-  (->> (pluralize post-xf)
-       (concat (pluralize pre-xf)
-               [(map #(or (:body %) %))])
-       (apply comp)))
+  (apply comp
+         (concat (pluralize pre-xf)
+                 [(map #(or (:body %) %))]
+                 (pluralize post-xf))))
 
 (defn- build-chan
-  [opts]
-  (a/chan 1 (build-xf opts)))
+  [{:as opts
+    :keys [on-error]
+    :or {on-error (fn [e]
+                    (println "An error occurred processing the channel request: " e))}}]
+  (a/chan 1 (build-xf opts) on-error))
 
 (defn- wait-and-callback
   [ch {:keys [callback]
@@ -44,8 +48,7 @@
   [opts]
   (-> default-opts
       (merge opts)
-      (update-in [:channel] #(when-not %
-                               (build-chan opts)))))
+      (update-in [:channel] #(or % (build-chan opts)))))
 
 (defn get
   ([uri] (get uri {}))

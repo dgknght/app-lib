@@ -10,13 +10,16 @@
     (let [calls (atom [])]
       (with-redefs [http/get (fn [& [_uri {:keys [channel]} :as args]]
                                (swap! calls conj args)
-                               (a/go
-                                 (a/>! channel {:status 200
-                                                :body "OK"})))]
+                               ; This is what cljs-http does
+                               (let [c (a/chan)]
+                                 (a/pipe c channel)
+                                 (a/go
+                                   (a/>! c {:status 200
+                                            :body "OK"}))))]
         (let [returned (api/get "https://myapp.com/"
                                 {:callback (fn [x]
                                              (is (= "OK" x)
-                                                 "The HTTP response is passed to the callback fn")
+                                                 "The HTTP response body is passed to the callback fn")
                                              (done))})
               [c :as cs] @calls]
           (is (= 1 (count cs))
