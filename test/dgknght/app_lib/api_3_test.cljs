@@ -12,10 +12,12 @@
                                (swap! calls conj args)
                                ; This is what cljs-http does
                                (let [c (a/chan)]
-                                 (a/pipe c channel)
                                  (a/go
                                    (a/>! c {:status 200
-                                            :body "OK"}))))]
+                                            :body "OK"}))
+                                 (if channel
+                                   (a/pipe c channel)
+                                   c)))]
         (let [returned (api/get "https://myapp.com/"
                                 {:callback (fn [x]
                                              (is (= "OK" x)
