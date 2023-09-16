@@ -39,7 +39,10 @@
   (is (= "invitations" (plural "invitation"))
       "The correct plural string form is returned for a string")
   (is (= :invitations (plural :invitation))
-      "The correct plural keyword form is returned for a keyword"))
+      "The correct plural keyword form is returned for a keyword")
+  (is (thrown-with-msg?
+        java.lang.AssertionError #"^Assert failed: word"
+        (plural nil))))
 
 (deftest conjoin-items-in-a-list
   (is (= "one" (conjoin "or" ["one"])))
