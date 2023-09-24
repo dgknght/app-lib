@@ -71,6 +71,7 @@
 (defn plural
   "Acceps a singular noun and attempts to convert it into plural"
   [word]
+  {:pre [word]}
   (let [[kw word] (if (keyword? word)
                        [true (name word)]
                        [false word])

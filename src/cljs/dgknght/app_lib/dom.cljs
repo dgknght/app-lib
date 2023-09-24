@@ -84,6 +84,10 @@
   (.setAttribute elem a-name a-value))
 
 (defn debounce
+  "Accepts a function and returns a function that will execute the given
+  function after a delay (300 milliseconds unless otherwise specified) if
+  the function is not invoked again during the delay (in which case case
+  the timer starts again and the given fn invoked after the delay)."
   ([f] (debounce f 300))
   ([f timeout]
    (let [id (atom nil)]
