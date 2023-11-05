@@ -6,7 +6,8 @@
             #?(:clj [clojure.data.zip :as zip])
             #?(:clj [clojure.data.zip.xml :refer [xml1->]])
             #?(:clj [clojure.zip :refer [xml-zip]])
-            #?(:clj [clojure.pprint :refer [pprint]])
+            #?(:clj [clojure.pprint :refer [pprint]]
+               :cljs [cljs.pprint :refer [pprint]])
             #?(:clj [clj-time.format :as tf]
                :cljs [cljs-time.format :as tf])
             #?(:clj [clj-time.coerce :refer [to-date-time]]
@@ -56,8 +57,10 @@
   [msg form]
   (let [expected (safe-nth form 1)
         actual (safe-nth form 2)]
-    `(let [actual# (map-indexed #(prune-to %2 (get-in ~expected [%1]))
-                                ~actual)
+    `(let [actual# (->> ~actual
+                        (interleave ~expected)
+                        (partition 2)
+                        (mapv #(apply prune-to %)))
            result# (if (= ~expected actual#)
                      :pass
                      :fail)
