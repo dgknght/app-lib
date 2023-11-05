@@ -59,13 +59,19 @@
 (def internal-server-error
   (response {:message "internal server error"} 500))
 
+(defn extract-token-bearer
+  "Given a request, extracts the token from the authorization header."
+  [{:keys [headers]}]
+  (when-let [authorization (headers "authorization")]
+    (re-find #"(?<=^Bearer ).*" authorization)))
+
 (defn wrap-authentication
   "Wraps the handler with an authentication lookup, passing
   the request on to the handle step in the handler if the authentication
   function returns non-nil, otherwise returing an unauthenticated response.
   
   Options:
-    :authentication-fn - A function accepting one argument (the request) and returning the authentication result, or nil"
+    :authenticate-fn - A function accepting one argument (the request) and returning the authentication result, or nil"
   [handler {:keys [authenticate-fn]}]
   (fn [req]
     (if-let [authenticated (authenticate-fn req)]
