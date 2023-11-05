@@ -3,7 +3,8 @@
   (:require [clojure.string :as string]
             [clojure.walk]
             #?(:clj [clojure.core :as cc])
-            #?(:clj [clojure.pprint :refer [pprint]])
+            #?(:clj [clojure.pprint :refer [pprint]]
+               :cljs [cljs.pprint :refer [pprint]])
             #?(:cljs [goog.string :as gstr])
             #?(:cljs [dgknght.app-lib.decimal :as d]))
   #?(:clj (:import java.util.UUID clojure.lang.IDeref)))
