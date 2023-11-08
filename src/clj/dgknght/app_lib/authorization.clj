@@ -7,11 +7,24 @@
 (derive ::update ::manage)
 (derive ::destroy ::manage)
 
+(def ^:dynamic *config* {:type-fn (:type-fn *config*)})
+
+(defmacro with-config
+  [config & body]
+  `(binding [*config* (merge *config* ~config)]
+     ~@body))
+
+(defn wrap-authorization-config
+  [handler config]
+  (fn [req]
+    (with-config config
+      (handler req))))
+
 (defn- type-of
   [model-or-keyword]
   (if (keyword? model-or-keyword)
     model-or-keyword
-    (storage/tag model-or-keyword)))
+    ((:type-fn *config*) model-or-keyword)))
 
 (defmulti allowed?
   "Returns a truthy or falsey value indicating whether or not the
@@ -39,7 +52,7 @@
                          ["forbidden" ::forbidden])]
     (ex-info msg {:type err-type
                   :action action
-                  :model (storage/tag model)
+                  :model ((:type-fn *config*) model)
                   ::opaque? opaque?})))
 
 (def denied? (complement allowed?))
@@ -72,7 +85,7 @@
 
 (defn +scope
   ([criteria user]
-   (+scope criteria (storage/tag criteria) user))
+   (+scope criteria ((:type-fn *config*) criteria) user))
   ([criteria model-type user]
    (if-let [s (scope model-type user)]
      (if (empty? criteria)
