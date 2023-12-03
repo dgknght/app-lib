@@ -222,7 +222,13 @@
 (defn assert-http-status
   [expected-status msg form]
   (let [response (safe-nth form 1)]
-    `(let [status# (get-in ~response [:status])]
+    `(let [status# (get-in ~response [:status])
+           msg# (some #(get-in ~response %)
+                      [[:json-body :error]
+                       [:json-body :message]
+                       [:body :error]
+                       [:body :message]
+                       [:body]])]
        {:type (if (= ~expected-status status#)
                 :pass
                 :fail)
@@ -231,7 +237,7 @@
                                   ~expected-status
                                   status#))
         :expected ~expected-status
-        :actual status#})))
+        :actual (format "%s: %s" status# msg#)})))
 
 (defn http-success?
   [msg form]
@@ -243,7 +249,7 @@
                     (:status ~response)
                     ~msg)
       :expected "20x"
-      :actual (:status ~response)}))
+      :actual (format "%s: %s" (:status ~response) (:body ~response))}))
 
 (defn comparable-uri
   [input]
