@@ -30,19 +30,28 @@
                  [(map #(or (:body %) %))]
                  (pluralize post-xf))))
 
+(defn- error-fn
+  [{:keys [callback
+           on-error]
+    :or {callback identity
+         on-error identity}}]
+  (fn [e]
+      (callback)
+      (on-error e)))
+
 (defn- build-chan
-  [{:as opts
-    :keys [on-error]
-    :or {on-error (fn [e]
-                    (println "An error occurred processing the channel request: " e))}}]
-  (a/chan 1 (build-xf opts) on-error))
+  [opts]
+  (a/chan 1 (build-xf opts) (error-fn opts)))
 
 (defn- wait-and-callback
-  [ch {:keys [callback]
-       :or {callback identity}}]
+  [ch {:keys [on-success
+              callback]
+       :or {on-success identity
+            callback identity}}]
   (a/go
     (let [res (a/<! ch)]
-      (callback res))))
+      (callback)
+      (on-success res))))
 
 (defn- build-req
   [opts]
