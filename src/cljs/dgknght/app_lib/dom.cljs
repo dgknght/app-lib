@@ -14,6 +14,11 @@
   [elem]
   (.-value elem))
 
+(defn prevent-default
+  "Instruct the DOM event that the default behavior should be suppressed."
+  [e]
+  (.preventDefault e))
+
 (defn bounding-client-rect
   ([elem] (bounding-client-rect elem {}))
   ([elem {:keys [as-clojure?]}]
@@ -39,14 +44,31 @@
    40 :down})
 
 (defn key-code
+  "Get a keyword representing the keycode of the DOM event"
   [event]
   (get-in key-codes [(.-keyCode event)]))
 
+(defn tab?
+  "Return a boolean value indicating whether or not the event
+  represents a press of the tab key"
+  [event]
+  (= :tab (key-code event)))
+
+(defn enter?
+  "Return a boolean value indicating whether or not the event
+  represents a press of the enter key"
+  [event]
+  (= :enter (key-code event)))
+
 (defn ctrl-key?
+  "Return a boolean value indicating whether or not the event
+  indicates the control key was pressed"
   [event]
   (.-ctrlKey event))
 
 (defn shift-key?
+  "Return a boolean value indicating whether or not the event
+  indicates the shift key was pressed"
   [event]
   (.-shiftKey event))
 

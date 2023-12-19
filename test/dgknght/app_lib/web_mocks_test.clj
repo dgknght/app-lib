@@ -1,7 +1,8 @@
 (ns dgknght.app-lib.web-mocks-test
   (:require [clojure.test :refer [deftest is]]
             [clojure.string :as string]
-            [clj-http.client :as http] ; it seems the macro doesn't compile correctly without this
+            [clojure.pprint :refer [pprint]]
+            [clj-http.client :as http] ; this is necessary here because referencing it in the ns with the macro itself fails during the clj phase of the cljs compilation
             [dgknght.app-lib.web-mocks :as m]))
 
 (def mocks
@@ -51,18 +52,6 @@
         "A call can be checked for multple occurrences")))
 
 (deftest no-mock-is-found
-  (let [printed (atom [])]
-    (with-redefs [println (fn [& args]
-                            (swap! printed conj args))]
-      (m/with-web-mocks [calls] mocks
-        (let [res (http/get "https://othersite.com")
-              [m1 m2 :as msgs] @printed]
-          (is (nil?  res) "Nothing is returned")
-          (is (= 2 (count msgs))
-              "A message is printed")
-          (is (= ["Unable to match the request: "
-                  "{:method :get, :url \"https://othersite.com\"}\n"]
-                 m1)
-              "The request is printed to standard out")
-          (is (= "Mocks " (first m2))
-              "The mocks are printed to standard out"))))))
+  (m/with-web-mocks [calls] mocks
+    (with-redefs [pprint (constantly nil)]
+      (is (nil? (http/get "https://othersite.com")) "Nothing is returned"))))

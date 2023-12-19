@@ -1,5 +1,7 @@
 (ns dgknght.app-lib.web-mocks.matching
-  (:require [dgknght.app-lib.core :as lib])
+  (:require #?(:clj [clojure.pprint :refer [pprint]]
+               :cljs [cljs.pprint :refer [pprint]])
+            [dgknght.app-lib.core :as lib])
   #?(:clj (:import java.util.regex.Pattern)))
 
 #?(:clj
