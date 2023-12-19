@@ -65,5 +65,9 @@
                                       dgknght.app-lib.web-mocks/called-with-headers?]}
            :unresolved-namespace {:exclude [js]}
            :namespace-name-mismatch {:level :off}
+           :unused-referred-var {:exclude {clojure.pprint [pprint]
+                                           cljs.pprint [pprint]}}
+           :unused-namespace {:exclude [clojure.pprint
+                                        cljs.pprint]}
            :clojure-lsp/unused-public-var {:level :off}}
  :output {:linter-name true}}

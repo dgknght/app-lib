@@ -1,5 +1,6 @@
 (ns dgknght.app-lib.forms.typeahead
   (:require [clojure.string :as string]
+            [cljs.pprint :refer [pprint]]
             [reagent.core :as r]
             [dgknght.app-lib.core :as lib]
             [dgknght.app-lib.dom :as dom]
@@ -206,14 +207,28 @@
       (assoc-with-fn :on-focus on-focus)))
 
 (defn- blur-handler*
-  [{:keys [mode items model field text-value caption-fn find-fn]}]
+  [{:keys [mode
+           items
+           model
+           field
+           text-value
+           caption-fn
+           find-fn
+           on-blur]
+    :or {on-blur identity}}]
   (fn [_]
-    (when @items
-      (reset! items nil)
-      (if-let [v (get-in @model field)]
-        (when-not (= :direct mode)
-          (find-fn v #(reset! text-value (caption-fn %))))
-        (reset! text-value "")))))
+    (if @items
+      (do (reset! items nil)
+          (if-let [v (get-in @model field)]
+            (if (= :direct mode)
+              (on-blur @text-value)
+              (find-fn v (fn [r]
+                           (reset! text-value (caption-fn r))
+                           (on-blur r))))
+            (do
+              (reset! text-value "")
+              (on-blur nil))))
+      (on-blur @text-value))))
 
 (defn- blur-handler
   [item]

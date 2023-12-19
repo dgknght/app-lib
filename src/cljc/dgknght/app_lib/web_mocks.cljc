@@ -3,6 +3,12 @@
   (:require [lambdaisland.uri :refer [query-string->map]]
             [dgknght.app-lib.web-mocks.matching :refer [match?]]
             [dgknght.app-lib.web-mocks.impl :as impl]
+            ; If I reference clj-http and cljs-http here, it causes
+            ; a compliation failure when running lein doo
+            ; It appears the CLJ phase of the CLJS compilcation
+            ; is unable to resolve clj-http
+            #?(:clj [clojure.pprint :refer [pprint]]
+               :cljs [cljs.pprint :refer [pprint]])
             #?(:cljs [cljs.core.async :as a])
             #?(:clj [clojure.test :as test])))
 
@@ -18,10 +24,8 @@
            (filter #(match? req (first %)))
            (map #((second %) req))
            first)
-      (do
-        (println "Unable to match the request: " (prn-str req))
-        (println "Mocks " (prn-str mocks))
-        nil)))
+      (pprint {::unable-to-match-request req
+               ::mocks mocks})))
 
 (defn request-handler
   [calls mocks]
@@ -30,8 +34,10 @@
     #?(:clj (call-matching-mock req mocks)
        :cljs (let [ch (:channel req)
                    res (call-matching-mock req mocks)]
-               (when res
-                 (a/put! ch res))
+               (if res
+                 (a/put! ch res)
+                 (pprint {::unable-to-match-request req
+                          ::mocks mocks}))
                (a/close! ch)
                ch))))
 
