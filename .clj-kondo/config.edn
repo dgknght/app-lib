@@ -69,5 +69,6 @@
                                            cljs.pprint [pprint]}}
            :unused-namespace {:exclude [clojure.pprint
                                         cljs.pprint]}
-           :clojure-lsp/unused-public-var {:level :off}}
+           :clojure-lsp/unused-public-var {:level :off}
+           :deprecated-var {:exclude {dgknght.app-lib.bootstrap-icons/icon {:namespaces [dgknght.app-lib.bootstrap-icons]}}}}
  :output {:linter-name true}}
