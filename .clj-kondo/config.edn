@@ -5,6 +5,7 @@
                                                            url-like?
                                                            not-url-like?
                                                            called?
+                                                           logged?
                                                            called-with-headers?
                                                            not-called?
                                                            seq-of-maps-like?
@@ -30,6 +31,7 @@
                                                            http-response-without-cookie?
                                                            same-date?])
                                          (dgknght.app-lib.test/with-mail-capture [mailbox])
+                                         (dgknght.app-lib.log-capture/with-log-capture [logs])
                                          (cljs.test/is [comparable?
                                                         dgknght.app-lib.test-assertions/seq-of-maps-like?])
                                          (dgknght.app-lib.test/with-log-capture [logged])
