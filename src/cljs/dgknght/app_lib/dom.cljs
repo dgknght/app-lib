@@ -110,10 +110,11 @@
   function after a delay (300 milliseconds unless otherwise specified) if
   the function is not invoked again during the delay (in which case case
   the timer starts again and the given fn invoked after the delay)."
-  ([f] (debounce f 300))
-  ([f timeout]
-   (let [id (atom nil)]
-     (fn [& args]
-       (js/clearTimeout @id)
-       (reset! id (js/setTimeout #(apply f args)
-                                 timeout))))))
+  [f & [timeout]]
+  (let [timeout-id (atom nil)]
+    (fn [& args]
+      (when-let [id @timeout-id]
+        (js/clearTimeout id))
+      (reset! timeout-id
+              (js/setTimeout #(apply f args)
+                             (or timeout 300))))))
