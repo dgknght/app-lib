@@ -35,7 +35,7 @@
   (reset! text-value (get-in after field)))
 
 (defn watch-model
-  [{:keys [model field] :as options}]
+  [{:keys [model field items] :as options}]
   (add-watch model
              (cons ::typeahead field)
              (fn [_ _ before after]
@@ -45,6 +45,7 @@
                ; not now need to be rerendered?
                (when (not= (get-in before field)
                            (get-in after field))
+                 (reset! items nil)
                  (handle-model-change before after options)))))
 
 (defn set-value

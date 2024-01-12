@@ -73,5 +73,18 @@
                                            cljs.pprint [pprint]}}
            :unused-namespace {:exclude [clojure.pprint
                                         cljs.pprint]}
-           :clojure-lsp/unused-public-var {:level :off}}
+           :clojure-lsp/unused-public-var {:level :off}
+           :deprecated-var
+           {:exclude
+            {dgknght.app-lib.bootstrap-icons/icon
+             {:defs [dgknght.app-lib.bootstrap-icons/icon
+                     dgknght.app-lib.bootstrap-icons/icont-with-text
+                     dgknght.app-lib.bootstrap-5/navbar
+                     dgknght.app-lib.bootstrap-5/icon
+                     dgknght.app-lib.forms/date-input
+                     dgknght.app-lib.forms/busy-button]
+              :namespaces [dgknght.app-lib.bootstrap-icons
+                           dgknght.app-lib.bootstrap-4
+                           dgknght.app-lib.bootstrap-5
+                           dgknght.app-lib.forms]}}}}
  :output {:linter-name true}}
