@@ -7,7 +7,7 @@
 (derive ::update ::manage)
 (derive ::destroy ::manage)
 
-(def ^:dynamic *config* {:type-fn (:type-fn *config*)})
+(def ^:dynamic *config* {:type-fn storage/tag})
 
 (defmacro with-config
   [config & body]
