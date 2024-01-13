@@ -38,22 +38,26 @@
                   (map #(or (:body %) %))]
                  (pluralize post-xf))))
 
+; make sure the error is recognizable as an error
+; when it's time to evaluate the success of the 
+; call
 (defn- error
   [x]
-  (vary-meta x assoc ::error true))
+  x
+  ; 
+  #_(vary-meta x assoc ::error true))
 
+; evaluate the response of the call to see if it
+; was a success
 (defn- error?
   [x]
-  (-> x meta ::error))
+  (instance? js/Error x)
+  #_(-> x meta ::error))
 
 (defn- error-fn
-  [{:keys [callback
-           on-error]
-    :or {callback identity
-         on-error identity}}]
-  (fn [e]
-    (callback)
-    (error (on-error e))))
+  [{:keys [on-error]
+    :or {on-error identity}}]
+  #(error (on-error %)))
 
 (defn- build-chan
   [opts]

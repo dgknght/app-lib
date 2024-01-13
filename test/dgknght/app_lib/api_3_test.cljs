@@ -10,6 +10,13 @@
 ; - on 4XX and 5XX call raise exception (which calls on-error and triggers on-failure)
 ; - on exception call on-error, which triggers on-failure
 
+(def blank-state
+  {:calls []
+   :callbacks {:on-success []
+               :on-failure []
+               :on-error []
+               :callback 0}})
+
 (defn- assert-successful-get
   [state done]
   (let [{[c :as cs] :calls
@@ -75,11 +82,7 @@
 (deftest get-a-resource
   (async
     done
-    (let [state (atom {:calls []
-                       :callbacks {:on-success []
-                                   :on-failure []
-                                   :on-error []
-                                   :callback 0}})
+    (let [state (atom blank-state)
           t (delay (assert-successful-get state done))]
       (with-redefs [http/get (mock-get state
                                        {:status 200
@@ -91,3 +94,48 @@
                   (is (= "OK" final-result)
                       "The body is the final result")
                   (deref t))))))))
+
+(defn- assert-not-found
+  [state done]
+  (let [{[c :as cs] :calls
+         callbacks :callbacks} @state]
+    (is (= 1 (count cs))
+        "cljs-http/get is called one time")
+    (is (= "https://myapp.com/"
+           (first c))
+        "The URI is the 1st arg passed to cljs-http/get")
+    (is (= "application/json"
+           (get-in (second c) [:headers "Content-Type"]))
+        "The content-type header is application/json")
+    (is (= "application/json"
+           (get-in (second c) [:headers "Accept"]))
+        "The Accept header is application/json")
+
+    (is (= 1 (:callback callbacks))
+        "The :callback callback is invoked")
+
+    (let [[x :as xs] (:on-failure callbacks)]
+      (is (= 1 (count xs))
+          "The :on-failure callback is invoked once")
+      (is (= "Not found" x)
+          "The :on-failure callback is invoked with the body of the response"))
+
+    (is (= 0 (count (:on-success callbacks)))
+        "The :on-success callback is not invoked")
+
+    (done)))
+
+(deftest resource-not-found
+  (async
+    done
+    (let [state (atom blank-state)
+          t (delay (assert-not-found state done))]
+      (with-redefs [http/get (mock-get state
+                                       {:status 404
+                                        :body "Not found"})]
+        (let [returned (invoke-get "https://myapp.com/" state)]
+          (is (satisfies? Channel returned)
+              "An async channel is returned")
+          ; TOOD: What should the final result be?
+          (a/go (a/<! returned)
+                (deref t)))))))
