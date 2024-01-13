@@ -23,12 +23,27 @@
       x)
     []))
 
+(defn- handle-non-success-status
+  [{:keys [status] :as res}]
+  (if (<= 200 status 299)
+    res
+    (throw (ex-info "non success response" {:response res}))))
+
 (defn- build-xf
   [{:keys [pre-xf post-xf]}]
   (apply comp
          (concat (pluralize pre-xf)
-                 [(map #(or (:body %) %))]
+                 [(map handle-non-success-status)
+                  (map #(or (:body %) %))]
                  (pluralize post-xf))))
+
+(defn- error
+  [x]
+  (vary-meta x assoc ::error true))
+
+(defn- error?
+  [x]
+  (-> x meta ::error))
 
 (defn- error-fn
   [{:keys [callback
@@ -36,8 +51,8 @@
     :or {callback identity
          on-error identity}}]
   (fn [e]
-      (callback)
-      (on-error e)))
+    (callback)
+    (error (on-error e))))
 
 (defn- build-chan
   [opts]
@@ -45,13 +60,18 @@
 
 (defn- wait-and-callback
   [ch {:keys [on-success
-              callback]
+              callback
+              on-failure]
        :or {on-success identity
-            callback identity}}]
+            callback identity
+            on-failure identity}}]
   (a/go
     (let [res (a/<! ch)]
       (callback)
-      (on-success res))))
+      ; TODO: If the caller supplies :on-error, how do we know not to call on-success?
+      (if (error? res)
+        (on-failure res)
+        (on-success res)))))
 
 (defn- build-req
   [opts]
