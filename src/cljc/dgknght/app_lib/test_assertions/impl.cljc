@@ -15,6 +15,7 @@
             [lambdaisland.uri :refer [uri
                                       query-string->map]]
             #?(:cljs [goog.string])
+            #?(:cljs [goog.string.format])
             #?(:clj [dgknght.app-lib.test :refer [parse-html-body]])
             [dgknght.app-lib.models :as models]
             [dgknght.app-lib.core :refer [update-in-if
@@ -23,7 +24,7 @@
   #?(:clj (:import java.io.StringWriter)))
 
 #?(:cljs (def fmt goog.string/format)
-   :clj (def fmt format))
+   :clj (def fmt clojure.core/format))
 
 (defn report-msg
   [& msgs]
@@ -237,7 +238,7 @@
                                   ~expected-status
                                   status#))
         :expected ~expected-status
-        :actual (format "%s: %s" status# msg#)})))
+        :actual (fmt "%s: %s" status# msg#)})))
 
 (defn http-success?
   [msg form]
@@ -249,7 +250,7 @@
                     (:status ~response)
                     ~msg)
       :expected "20x"
-      :actual (format "%s: %s" (:status ~response) (:body ~response))}))
+      :actual (fmt "%s: %s" (:status ~response) (:body ~response))}))
 
 (defn comparable-uri
   [input]
