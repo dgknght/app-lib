@@ -5,6 +5,8 @@
             [cljs-http.client :as http]
             [dgknght.app-lib.api :as og]))
 
+(defrecord Error [message])
+
 (def default-opts
   {:headers {"Content-Type" "application/json"
              "Accept" "application/json"}})
@@ -24,11 +26,28 @@
       x)
     []))
 
+(def ^:private status-msgs
+  {404 "Not found"
+   403 "Forbidden"
+   401 "Unauthorized"
+   500 "Server error"})
+
+(defn- extract-msg
+  [{:keys [body status]}]
+  (or (:message body)
+      (:error body)
+      (status-msgs status)
+      "Unknown"))
+
 (defn- handle-non-success-status
   [{:keys [status] :as res}]
   (if (<= 200 status 299)
     res
-    (throw (ex-info "non success response" {:response res}))))
+    (throw (ex-info "non success response" {::message (extract-msg res)}))))
+
+(defn- non-success-msg
+  [e]
+  (-> e ex-data ::message))
 
 (defn- build-xf
   [{:keys [pre-xf post-xf]}]
@@ -38,43 +57,31 @@
                   (map #(or (:body %) %))]
                  (pluralize post-xf))))
 
-; make sure the error is recognizable as an error
-; when it's time to evaluate the success of the 
-; call
-(defn- error
-  [x]
-  x
-  ; 
-  #_(vary-meta x assoc ::error true))
-
-; evaluate the response of the call to see if it
-; was a success
-(defn- error?
-  [x]
-  (instance? js/Error x)
-  #_(-> x meta ::error))
-
-(defn- error-fn
-  [{:keys [on-error]
-    :or {on-error identity}}]
-  #(error (on-error %)))
+(defn- ex-handler
+  [{:keys [on-error]}]
+  (fn [e]
+    (if-let [msg (non-success-msg e)]
+      (->Error msg)
+      (if on-error
+        (on-error e)
+        (->Error (.getMessage e))))))
 
 (defn- build-chan
   [opts]
-  (a/chan 1 (build-xf opts) (error-fn opts)))
+  (a/chan 1 (build-xf opts) (ex-handler opts)))
 
 (defn- wait-and-callback
   [ch {:keys [on-success
-              callback
-              on-failure]
+              on-failure
+              callback]
        :or {on-success identity
-            callback identity
-            on-failure identity}}]
+            on-failure identity
+            callback identity}}]
   (a/go
     (let [res (a/<! ch)]
       (callback)
-      (if (error? res)
-        (on-failure res)
+      (if (instance? Error res)
+        (on-failure (:message res))
         (on-success res)))))
 
 (defn- build-req

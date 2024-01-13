@@ -7,14 +7,22 @@
             [dgknght.app-lib.api-3 :as api]))
 
 ; - on 2XX, call on-success
-; - on 4XX and 5XX call raise exception (which calls on-error and triggers on-failure)
-; - on exception call on-error, which triggers on-failure
+; - on 4XX and 5XX call on-failure
+; - on exception call on-error. If on-error returns nil
+;   - call on-failure
+;   - call on-success
+
+
+; - :on-success is called when the call succeeds (2XX status)
+; - :on-failure is called when the call fails
+;   - because of a 4XX or 5XX status
+;   - because of an unhandled exception
+; - :on-error allows for an exception to be handled and a workable value supplied
 
 (def blank-state
   {:calls []
    :callbacks {:on-success []
                :on-failure []
-               :on-error []
                :callback 0}})
 
 (defn- assert-successful-get
@@ -64,7 +72,7 @@
                                  [:callbacks :on-failure]
                                  conj
                                  x)
-                          x)
+                          nil)
             :callback #(swap! state update-in [:callbacks :callback] inc)}))
 
 (defn- mock-get
@@ -136,6 +144,5 @@
         (let [returned (invoke-get "https://myapp.com/" state)]
           (is (satisfies? Channel returned)
               "An async channel is returned")
-          ; TOOD: What should the final result be?
           (a/go (a/<! returned)
                 (deref t)))))))
