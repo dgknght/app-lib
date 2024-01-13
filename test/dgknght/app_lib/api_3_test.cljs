@@ -10,7 +10,7 @@
 ; - on 4XX and 5XX call raise exception (which calls on-error and triggers on-failure)
 ; - on exception call on-error, which triggers on-failure
 
-(defn- test-get-resource
+(defn- assert-successful-get
   [state done]
   (let [{[c :as cs] :calls
          callbacks :callbacks} @state]
@@ -35,7 +35,42 @@
       (is (= "OK" x)
           "The :on-success callback is invoked with the body of the response"))
 
+    (is (= 0 (count (:on-failure callbacks)))
+        "The :on-failure callback is not invoked")
+
     (done)))
+
+(defn- invoke-get
+  [url state]
+  (api/get url
+           {:on-success (fn [x]
+                          (swap! state
+                                 update-in
+                                 [:callbacks :on-success]
+                                 conj
+                                 x)
+                          ; NB: what we return here will be the final result
+                          x)
+            :on-failure (fn [x]
+                          (swap! state
+                                 update-in
+                                 [:callbacks :on-failure]
+                                 conj
+                                 x)
+                          x)
+            :callback #(swap! state update-in [:callbacks :callback] inc)}))
+
+(defn- mock-get
+  [state response]
+  (fn [& [_uri {:keys [channel]} :as args]]
+    (swap! state update-in [:calls] conj args)
+    ; This is what cljs-http does
+    (let [c (a/chan)
+          res (if channel
+                (a/pipe c channel)
+                c)]
+      (a/go (a/>! c response))
+      res)))
 
 (deftest get-a-resource
   (async
@@ -45,28 +80,11 @@
                                    :on-failure []
                                    :on-error []
                                    :callback 0}})
-          t (delay (test-get-resource state done))]
-      (with-redefs [http/get (fn [& [_uri {:keys [channel]} :as args]]
-                               (swap! state update-in [:calls] conj args)
-                               ; This is what cljs-http does
-                               (let [c (a/chan)
-                                     res (if channel
-                                           (a/pipe c channel)
-                                           c)]
-                                 (a/go
-                                   (a/>! c {:status 200
-                                            :body "OK"}))
-                                 res))]
-        (let [returned (api/get "https://myapp.com/"
-                                {:on-success (fn [x]
-                                               (swap! state
-                                                      update-in
-                                                      [:callbacks :on-success]
-                                                      conj
-                                                      x)
-                                               ; NB: what we return here will be the final result
-                                               x)
-                                 :callback #(swap! state update-in [:callbacks :callback] inc)})]
+          t (delay (assert-successful-get state done))]
+      (with-redefs [http/get (mock-get state
+                                       {:status 200
+                                        :body "OK"})]
+        (let [returned (invoke-get "https://myapp.com/" state)]
           (is (satisfies? Channel returned)
               "An async channel is returned")
           (a/go (let [final-result (a/<! returned)]
