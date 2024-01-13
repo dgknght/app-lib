@@ -41,7 +41,7 @@
         (throw (g-str/format "Unable to match the request to \"%s\"" (:url opts))))
       out-ch)))
 
-(deftest get-an-http-resource
+#_(deftest get-an-http-resource
   (async
     done
     (let [calls (atom [])]

@@ -1,6 +1,7 @@
 (ns dgknght.app-lib.api-3
   (:refer-clojure :exclude [get])
   (:require [cljs.core.async :as a]
+            [cljs.pprint :refer [pprint]]
             [cljs-http.client :as http]
             [dgknght.app-lib.api :as og]))
 
@@ -68,7 +69,6 @@
   (a/go
     (let [res (a/<! ch)]
       (callback)
-      ; TODO: If the caller supplies :on-error, how do we know not to call on-success?
       (if (error? res)
         (on-failure res)
         (on-success res)))))
