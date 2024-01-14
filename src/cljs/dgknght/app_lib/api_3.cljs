@@ -1,8 +1,11 @@
 (ns dgknght.app-lib.api-3
   (:refer-clojure :exclude [get])
   (:require [cljs.core.async :as a]
+            [cljs.pprint :refer [pprint]]
             [cljs-http.client :as http]
             [dgknght.app-lib.api :as og]))
+
+(defrecord Error [message])
 
 (def default-opts
   {:headers {"Content-Type" "application/json"
@@ -23,26 +26,63 @@
       x)
     []))
 
+(def ^:private status-msgs
+  {404 "Not found"
+   403 "Forbidden"
+   401 "Unauthorized"
+   500 "Server error"})
+
+(defn- extract-msg
+  [{:keys [body status]}]
+  (or (:message body)
+      (:error body)
+      (status-msgs status)
+      "Unknown"))
+
+(defn- handle-non-success-status
+  [{:keys [status] :as res}]
+  (if (<= 200 status 299)
+    res
+    (throw (ex-info "non success response" {::message (extract-msg res)}))))
+
+(defn- non-success-msg
+  [e]
+  (-> e ex-data ::message))
+
 (defn- build-xf
   [{:keys [pre-xf post-xf]}]
   (apply comp
          (concat (pluralize pre-xf)
-                 [(map #(or (:body %) %))]
+                 [(map handle-non-success-status)
+                  (map #(or (:body %) %))]
                  (pluralize post-xf))))
 
+(defn- ex-handler
+  [{:keys [on-error]}]
+  (fn [e]
+    (if-let [msg (non-success-msg e)]
+      (->Error msg)
+      (if on-error
+        (on-error e)
+        (->Error (.getMessage e))))))
+
 (defn- build-chan
-  [{:as opts
-    :keys [on-error]
-    :or {on-error (fn [e]
-                    (println "An error occurred processing the channel request: " e))}}]
-  (a/chan 1 (build-xf opts) on-error))
+  [opts]
+  (a/chan 1 (build-xf opts) (ex-handler opts)))
 
 (defn- wait-and-callback
-  [ch {:keys [callback]
-       :or {callback identity}}]
+  [ch {:keys [on-success
+              on-failure
+              callback]
+       :or {on-success identity
+            on-failure identity
+            callback identity}}]
   (a/go
     (let [res (a/<! ch)]
-      (callback res))))
+      (callback)
+      (if (instance? Error res)
+        (on-failure (:message res))
+        (on-success res)))))
 
 (defn- build-req
   [opts]

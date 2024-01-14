@@ -6,7 +6,8 @@
             #?(:clj [clojure.data.zip :as zip])
             #?(:clj [clojure.data.zip.xml :refer [xml1->]])
             #?(:clj [clojure.zip :refer [xml-zip]])
-            #?(:clj [clojure.pprint :refer [pprint]])
+            #?(:clj [clojure.pprint :refer [pprint]]
+               :cljs [cljs.pprint :refer [pprint]])
             #?(:clj [clj-time.format :as tf]
                :cljs [cljs-time.format :as tf])
             #?(:clj [clj-time.coerce :refer [to-date-time]]
@@ -14,6 +15,7 @@
             [lambdaisland.uri :refer [uri
                                       query-string->map]]
             #?(:cljs [goog.string])
+            #?(:cljs [goog.string.format])
             #?(:clj [dgknght.app-lib.test :refer [parse-html-body]])
             [dgknght.app-lib.models :as models]
             [dgknght.app-lib.core :refer [update-in-if
@@ -22,7 +24,7 @@
   #?(:clj (:import java.io.StringWriter)))
 
 #?(:cljs (def fmt goog.string/format)
-   :clj (def fmt format))
+   :clj (def fmt clojure.core/format))
 
 (defn report-msg
   [& msgs]
@@ -56,8 +58,10 @@
   [msg form]
   (let [expected (safe-nth form 1)
         actual (safe-nth form 2)]
-    `(let [actual# (map-indexed #(prune-to %2 (get-in ~expected [%1]))
-                                ~actual)
+    `(let [actual# (->> ~actual
+                        (interleave ~expected)
+                        (partition 2)
+                        (mapv #(apply prune-to %)))
            result# (if (= ~expected actual#)
                      :pass
                      :fail)
@@ -219,7 +223,13 @@
 (defn assert-http-status
   [expected-status msg form]
   (let [response (safe-nth form 1)]
-    `(let [status# (get-in ~response [:status])]
+    `(let [status# (get-in ~response [:status])
+           msg# (some #(get-in ~response %)
+                      [[:json-body :error]
+                       [:json-body :message]
+                       [:body :error]
+                       [:body :message]
+                       [:body]])]
        {:type (if (= ~expected-status status#)
                 :pass
                 :fail)
@@ -228,7 +238,7 @@
                                   ~expected-status
                                   status#))
         :expected ~expected-status
-        :actual status#})))
+        :actual (fmt "%s: %s" status# msg#)})))
 
 (defn http-success?
   [msg form]
@@ -240,7 +250,7 @@
                     (:status ~response)
                     ~msg)
       :expected "20x"
-      :actual (:status ~response)}))
+      :actual (fmt "%s: %s" (:status ~response) (:body ~response))}))
 
 (defn comparable-uri
   [input]

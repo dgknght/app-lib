@@ -63,12 +63,12 @@
                                       dgknght.app-lib.test-assertions/same-date?
                                       dgknght.app-lib.web-mocks/called?
                                       dgknght.app-lib.web-mocks/called-with-headers?]}
-           :unresolved-namespace {:exclude [js]}
-           :namespace-name-mismatch {:level :off}
            :unused-referred-var {:exclude {clojure.pprint [pprint]
                                            cljs.pprint [pprint]}}
            :unused-namespace {:exclude [clojure.pprint
                                         cljs.pprint]}
+           :unresolved-namespace {:exclude [js]}
+           :namespace-name-mismatch {:level :off}
            :clojure-lsp/unused-public-var {:level :off}
            :deprecated-var
            {:exclude
