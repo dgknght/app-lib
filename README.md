@@ -1,8 +1,13 @@
 # app-lib
+[![Clojure CI](https://github.com/dgknght/app-lib/actions/workflows/clojure.yml/badge.svg)](https://github.com/dgknght/app-lib/actions/workflows/clojure.yml)
 
-A Clojure library designed to ... well, that part is up to you.
+All the stuff I use in just about every app I ever make.
 
 ## Usage
+### Server tests
+```bash
+lein test
+```
 
 ### Client tests
 ```bash
@@ -11,11 +16,7 @@ npm install -g karma-cli
 lein doo once
 ```
 
-FIXME
-
-## License
-
-Copyright © 2021 FIXME
+Copyright © 2021
 
 This program and the accompanying materials are made available under the
 terms of the Eclipse Public License 2.0 which is available at
