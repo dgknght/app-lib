@@ -28,7 +28,8 @@
                                                            mime-msg-not-containing?
                                                            http-response-with-cookie?
                                                            http-response-without-cookie?
-                                                           same-date?])
+                                                           same-date?
+                                                           thrown-with-ex-data?])
                                          (dgknght.app-lib.test/with-mail-capture [mailbox])
                                          (cljs.test/is [comparable?
                                                         dgknght.app-lib.test-assertions/seq-of-maps-like?])
@@ -61,6 +62,7 @@
                                       dgknght.app-lib.test-assertions/http-response-with-cookie?
                                       dgknght.app-lib.test-assertions/http-response-without-cookie?
                                       dgknght.app-lib.test-assertions/same-date?
+                                      dgknght.app-lib.test-assertions/thrown-with-ex-data?
                                       dgknght.app-lib.web-mocks/called?
                                       dgknght.app-lib.web-mocks/called-with-headers?]}
            :unused-referred-var {:exclude {clojure.pprint [pprint]

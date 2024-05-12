@@ -439,3 +439,34 @@
         :type (if (~valid? ~spec ~value)
                 :pass
                 :fail)})))
+
+(defn ex-msg
+  [e]
+  #?(:clj (.getMessage e)
+     :cljs (.-message e)))
+
+(defn thrown-with-ex-data?
+  [msg form]
+  (let [expected-data (safe-nth form 1)
+        body (drop 2 form)]
+    `(try
+       ~@body
+       {:type :fail
+        :expected ~expected-data
+        :actual "no exception was thrown"
+        :message ~msg}
+       (catch clojure.lang.ExceptionInfo e#
+         (let [actual-data# (ex-data e#)]
+           {:expected ~expected-data
+            :actual actual-data#
+            :message ~msg
+            :type (if (= ~expected-data actual-data#)
+                    :pass
+                    :fail)}))
+       (catch Exception e#
+         {:type :fail
+          :expected ~expected-data
+          :actual (format "Expection ExceptionInfo to be throw, but got %s: \"%s\""
+                          (type e#)
+                          (ex-msg e#))
+          :message ~msg}))))

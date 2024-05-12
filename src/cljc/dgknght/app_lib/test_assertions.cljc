@@ -345,3 +345,15 @@
                            form
                            'cljs.spec.alpha/valid?
                            'cljs.spec.alpha/explain-str)))))
+
+#?(:clj
+   (defmethod test/assert-expr 'thrown-with-ex-data?
+     [msg form]
+     `(test/report
+        ~(impl/thrown-with-ex-data? msg form)))
+   :cljs
+   (when (exists? js/cljs.test$macros)
+     (defmethod js/cljs.test$macros.assert_expr 'dgknght.app-lib.test-assertions/thrown-with-ex-data?
+       [_env msg form]
+       `(test/report
+        ~(impl/thrown-with-ex-data? msg form)))))

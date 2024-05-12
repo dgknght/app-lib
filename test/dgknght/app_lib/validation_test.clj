@@ -175,10 +175,19 @@
                 ::result)]
       (is (= ::result res) "The result of the body is returned")
       (is @body-called? "The block is called with a valid model")))
-  (testing "an invalid model"
+  (testing "an invalid model without throwing an exception"
     (let [model {}
           body-called? (atom false)
           res (v/with-validation model ::test-model
                 (reset! body-called? true))]
       (is (v/has-error? res) "The result indicates invalid")
-      (is (not @body-called?) "The block is not called with a valid model"))))
+      (is (not @body-called?) "The block is not called with a valid model")))
+  (testing "an invalid model and throw an exception"
+    (let [model {}]
+      (try
+        (v/with-ex-validation model ::test-model
+          (is false "The body should not be called"))
+        (catch clojure.lang.ExceptionInfo e
+          (is (= {:errors {:name ["Name is required"]}}
+                 (ex-data e))
+              "The exception contains the expected data"))))))

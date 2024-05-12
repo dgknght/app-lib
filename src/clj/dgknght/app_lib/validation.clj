@@ -274,3 +274,18 @@
      (if (valid? validated#)
        (f# validated#)
        validated#)))
+
+(defmacro with-ex-validation
+  "Accepts a model and validation rules. If the model
+  passes the rules, the specified body is executed
+  and the result returned. If not, an exception is
+  thrown containing the error details in the ex-data.
+
+  Note that this rebinds the validated user object
+  to the same binding used to call the macro."
+  [model spec & body]
+  `(let [validated# (validate ~model ~spec)
+         f# (fn* [~model] ~@body)]
+     (if (valid? validated#)
+       (f# validated#)
+       (throw (ex-info "Validation failed" {:errors (error-messages validated#)})))))

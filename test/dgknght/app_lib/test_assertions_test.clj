@@ -154,3 +154,8 @@
   (is (conformant? #{:one :two}
                    :two)
       "Conformance to a spec can be asserted"))
+
+(deftest assert-an-exception-with-ex-data
+  (is (thrown-with-ex-data?
+        {:one 1}
+        (throw (ex-info "Something went wrong" {:one 1})))))
