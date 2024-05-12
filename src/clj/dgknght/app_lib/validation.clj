@@ -287,5 +287,7 @@
   `(let [validated# (validate ~model ~spec)
          f# (fn* [~model] ~@body)]
      (if (valid? validated#)
-       (f# validated#)
+       (-> validated#
+           (dissoc ::valid? ::errors)
+           f#)
        (throw (ex-info "Validation failed" {:errors (error-messages validated#)})))))
