@@ -290,4 +290,4 @@
        (-> validated#
            (dissoc ::valid? ::errors)
            f#)
-       (throw (ex-info "Validation failed" {:errors (error-messages validated#)})))))
+       (throw (ex-info "Validation failed" {::errors (error-messages validated#)})))))

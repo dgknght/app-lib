@@ -88,15 +88,17 @@
   (fn [req]
     (try (handler req)
          (catch clojure.lang.ExceptionInfo e
-           (let [opaque? (auth/opaque? e)]
-             (cond
-               (nil? opaque?)
-               (error-response e)
+           (if-let [errors (::v/errors (ex-data e))]
+             (response {:errors errors} 422)
+             (let [opaque? (auth/opaque? e)]
+               (cond
+                 (nil? opaque?)
+                 (error-response e)
 
-               opaque?
-               not-found
+                 opaque?
+                 not-found
 
-               :else
-               forbidden)))
+                 :else
+                 forbidden))))
          (catch Exception e
            (error-response e)))))

@@ -78,6 +78,16 @@
                             (throw ex))))
 
 (deftest handle-request-errrors
+  (testing "validation error"
+    (with-log-capture [logged]
+      (let [h (throwing-handler
+                (ex-info "The model is invalid"
+                         {::v/errors {:name ["Name is required"]}}))
+            res (h {})]
+        (is (= 422 (:status res))
+            "The response indicates unprocessable entity")
+        (is (= 0 (count @logged))
+            "Nothing is logged"))))
   (testing "unexpected error"
     (with-log-capture [logged]
       (let [h (throwing-handler (ex-info "induced error" {:my :data}))

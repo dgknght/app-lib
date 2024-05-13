@@ -188,6 +188,6 @@
         (v/with-ex-validation model ::test-model
           (is false "The body should not be called"))
         (catch clojure.lang.ExceptionInfo e
-          (is (= {:errors {:name ["Name is required"]}}
+          (is (= {::v/errors {:name ["Name is required"]}}
                  (ex-data e))
               "The exception contains the expected data"))))))
