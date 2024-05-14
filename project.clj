@@ -33,10 +33,12 @@
                        {:id "test"
                         :source-paths ["src/cljs" "src/cljc" "test"]
                         :compiler {:output-to "out/testable.js"
+                                   :output-dir "out"
+                                   :target :nodejs
                                    :main dgknght.app-lib.test-runner
                                    :optimizations :none}}]}
   :doo {:build "test"
-        :alias {:default [:firefox-headless]}}
+        :alias {:default [:node]}}
   :cloverage {:fail-threshold 90
               :high-watermark 90
               :ns-exclude-regex [#"dgknght.app-lib.client-macros"
