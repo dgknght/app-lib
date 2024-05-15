@@ -5,7 +5,7 @@
             [cljs-http.client :as http]
             [dgknght.app-lib.api :as og]))
 
-(defrecord Error [message])
+(defrecord Error [message data])
 
 (def default-opts
   {:headers {"Content-Type" "application/json"
@@ -30,6 +30,7 @@
   {404 "Not found"
    403 "Forbidden"
    401 "Unauthorized"
+   422 "Unprocessable entity"
    500 "Server error"})
 
 (defn- extract-msg
@@ -41,13 +42,10 @@
 
 (defn- handle-non-success-status
   [{:keys [status] :as res}]
-  (if (<= 200 status 299)
-    res
-    (throw (ex-info "non success response" {::message (extract-msg res)}))))
-
-(defn- non-success-msg
-  [e]
-  (-> e ex-data ::message))
+  (case status
+    (<= 200 status 299) res
+    422                 (throw (ex-info "Unprocessable entity" (:body res)))
+    (throw (ex-info (extract-msg res) {}))))
 
 (defn- build-xf
   [{:keys [pre-xf post-xf]}]
@@ -60,11 +58,9 @@
 (defn- ex-handler
   [{:keys [on-error]}]
   (fn [e]
-    (if-let [msg (non-success-msg e)]
-      (->Error msg)
-      (if on-error
-        (on-error e)
-        (->Error (.getMessage e))))))
+    (if on-error
+      (on-error e)
+      (->Error (ex-message e) (ex-data e)))))
 
 (defn- build-chan
   [opts]
@@ -81,7 +77,7 @@
     (let [res (a/<! ch)]
       (callback)
       (if (instance? Error res)
-        (on-failure (:message res))
+        (on-failure res)
         (on-success res)))))
 
 (defn- build-req

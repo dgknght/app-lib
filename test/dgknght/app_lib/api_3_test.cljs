@@ -133,7 +133,7 @@
     (let [[x :as xs] (:on-failure callbacks)]
       (is (= 1 (count xs))
           "The :on-failure callback is invoked once")
-      (is (= "Not found" x)
+      (is (= "Not found" (:message x))
           "The :on-failure callback is invoked with the body of the response"))
 
     (is (= 0 (count (:on-success callbacks)))
@@ -221,7 +221,7 @@
     (let [[x :as xs] (:on-failure callbacks)]
       (is (= 1 (count xs))
           "The :on-failure callback is invoked once")
-      (is (= "not found" x)
+      (is (= "not found" (:message x))
           "The :on-failure callback is invoked with the message from the body"))
 
     (is (= 0 (count (:on-success callbacks)))
@@ -237,6 +237,54 @@
       (with-redefs [http/post (mock-request state
                                             {:status 404
                                              :body {:message "not found"}})]
+        (let [res (invoke-post "https://myapp.com/things" {:name "Albert"} state)]
+          (is (satisfies? Channel res)
+              "An async channel is returned")
+          (a/go (a/<! res)
+                (deref t)))))))
+
+(defn- assert-invalid-post
+  [state done]
+  (let [{[c :as cs] :calls
+         callbacks :callbacks} @state]
+    (is (= 1 (count cs))
+        "cljs-http/post is called one time")
+    (is (= "https://myapp.com/things"
+           (first c))
+        "The URI is the 1st arg passed to cljs-http/get")
+    (is (= "application/json"
+           (get-in (second c) [:headers "Content-Type"]))
+        "The content-type header is application/json")
+    (is (= "application/json"
+           (get-in (second c) [:headers "Accept"]))
+        "The Accept header is application/json")
+
+    (is (= 1 (:callback callbacks))
+        "The :callback callback is invoked")
+
+    (let [[x :as xs] (:on-failure callbacks)]
+      (is (= 1 (count xs))
+          "The :on-failure callback is invoked once")
+      (is (= "Unprocessable entity"
+             (:message x))
+          "The :on-failure callback is invoked with a message about the error")
+      (is (= {:name ["Name is already in use"]}
+             (:errors (:data x)))
+          "The :on-failure callback is invoked with data from the body"))
+
+    (is (= 0 (count (:on-success callbacks)))
+        "The :on-success callback is not invoked")
+
+    (done)))
+
+(deftest post-a-resource-and-get-an-validation-error
+  (async
+    done
+    (let [state (atom blank-state)
+          t (delay (assert-invalid-post state done))]
+      (with-redefs [http/post (mock-request state
+                                            {:status 422
+                                             :body {:errors {:name ["Name is already in use"]}}})]
         (let [res (invoke-post "https://myapp.com/things" {:name "Albert"} state)]
           (is (satisfies? Channel res)
               "An async channel is returned")
