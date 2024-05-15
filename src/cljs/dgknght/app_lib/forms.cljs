@@ -179,13 +179,13 @@
       (checkbox-inputs* model field items options)])))
 
 (defn text-input
-  [model field {:keys [html on-change validations]
+  [model field {:keys [html on-change validations errors]
                 input-type :type
                 :or {input-type :text
                      on-change identity}
                 :as options}]
   (let [value (r/cursor model field)
-        errors (make-reaction #(v/validation-msg model field))]
+        errors (or errors (make-reaction #(v/validation-msg model field)))]
     (v/add-rules model field validations)
     (fn []
       (decorate
@@ -221,10 +221,10 @@
 
 (defn textarea-elem
   ([model field] (textarea-elem model field {}))
-  ([model field {:keys [validations] :as options}]
+  ([model field {:keys [validations errors] :as options}]
    (let [changed? (r/atom false)
          value (r/cursor model field)
-         errors (make-reaction #(v/validation-msg model field))]
+         errors (or errors (make-reaction #(v/validation-msg model field)))]
      (v/add-rules model field validations)
      (fn []
        (decorate
@@ -294,6 +294,7 @@
                        disabled-fn
                        on-accept
                        validations
+                       errors
                        html]
                 :or {input-type :text
                      equals-fn =
@@ -302,7 +303,7 @@
                      on-accept identity}
                 :as options}]
   (let [text-value (r/atom (unparse-fn (get-in @model field)))
-        errors (make-reaction #(v/validation-msg model field))]
+        errors (or errors (make-reaction #(v/validation-msg model field)))]
     (v/add-rules model field validations)
     (add-watch model
                (cons ::specialized-text-input field)
@@ -513,13 +514,14 @@
   [model field items {:keys [transform-fn
                              validations
                              on-change
+                             errors
                              html]
                       :or {transform-fn identity
                            on-change identity
                            html {}}
                       :as options}]
   (v/add-rules model field validations)
-  (let [errors (make-reaction #(v/validation-msg model field))]
+  (let [errors (or errors (make-reaction #(v/validation-msg model field)))]
     (fn []
       (decorate
         [:select (merge html
@@ -607,9 +609,9 @@
     html            - a map of attributes to be passed directly to the input element
     max-items       - the maximum number of matching data records to show in the list
     list-attr       - attributes to be applied to the list HTML element"
-  [model field options]
+  [model field {:as options :keys [errors]}]
   (let [state (typeahead/state model field options)
-        errors (make-reaction #(v/validation-msg model field))]
+        errors (or errors (make-reaction #(v/validation-msg model field)))]
     (typeahead/set-value state)
     (typeahead/watch-model state)
     (fn []
@@ -625,9 +627,9 @@
                                                        ::target ::typeahead})))))))
 
 (defn typeahead-field
-  [model field options]
+  [model field {:as options :keys [errors]}]
   (let [state (typeahead/state model field options)
-        errors (make-reaction #(v/validation-msg model field))]
+        errors (or errors (make-reaction #(v/validation-msg model field)))]
     (typeahead/set-value state)
     (typeahead/watch-model state)
     (fn []
