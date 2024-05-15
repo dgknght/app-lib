@@ -42,10 +42,11 @@
 
 (defn- handle-non-success-status
   [{:keys [status] :as res}]
-  (case status
-    (<= 200 status 299) res
-    422                 (throw (ex-info "Unprocessable entity" (:body res)))
-    (throw (ex-info (extract-msg res) {}))))
+  (if (<= 200 status 299)
+    res
+    (if (= 422 status)
+      (throw (ex-info "Unprocessable entity" (:body res)))
+      (throw (ex-info (extract-msg res) {})))))
 
 (defn- build-xf
   [{:keys [pre-xf post-xf]}]
