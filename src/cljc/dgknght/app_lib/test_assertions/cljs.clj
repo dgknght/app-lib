@@ -141,3 +141,8 @@
   [_env msg form]
   `(test/do-report
      ~(impl/conformant? msg form 'cljs.spec.alpha/valid? 'cljs.spec.alpha/explain-str)))
+
+(defmethod test/assert-expr 'dgknght.app-lib.test-assertions/thrown-with-ex-data?
+  [_env msg form]
+  `(test/do-report
+     ~(impl/thrown-with-ex-data? msg form)))

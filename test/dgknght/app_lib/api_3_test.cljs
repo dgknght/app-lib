@@ -4,6 +4,7 @@
             [cljs.core.async :as a]
             [cljs.core.async.impl.protocols :refer [Channel]]
             [cljs-http.client :as http]
+            [goog.string :refer [format]]
             [dgknght.app-lib.api-3 :as api]))
 
 ; - on 2XX, call on-success
@@ -55,27 +56,34 @@
 
     (done)))
 
+(defn- callbacks
+  [state]
+  {:on-success (fn [x]
+                 (swap! state
+                        update-in
+                        [:callbacks :on-success]
+                        conj
+                        x)
+                 ; NB: what we return here will be the final result
+                 x)
+   :on-failure (fn [x]
+                 (swap! state
+                        update-in
+                        [:callbacks :on-failure]
+                        conj
+                        x)
+                 nil)
+   :callback #(swap! state update-in [:callbacks :callback] inc)})
+
 (defn- invoke-get
   [url state]
-  (api/get url
-           {:on-success (fn [x]
-                          (swap! state
-                                 update-in
-                                 [:callbacks :on-success]
-                                 conj
-                                 x)
-                          ; NB: what we return here will be the final result
-                          x)
-            :on-failure (fn [x]
-                          (swap! state
-                                 update-in
-                                 [:callbacks :on-failure]
-                                 conj
-                                 x)
-                          nil)
-            :callback #(swap! state update-in [:callbacks :callback] inc)}))
+  (api/get url (callbacks state)))
 
-(defn- mock-get
+(defn- invoke-post
+  [url resource state]
+  (api/post url resource (callbacks state)))
+
+(defn- mock-request
   [state response]
   (fn [& [_uri {:keys [channel]} :as args]]
     (swap! state update-in [:calls] conj args)
@@ -92,7 +100,7 @@
     done
     (let [state (atom blank-state)
           t (delay (assert-successful-get state done))]
-      (with-redefs [http/get (mock-get state
+      (with-redefs [http/get (mock-request state
                                        {:status 200
                                         :body "OK"})]
         (let [returned (invoke-get "https://myapp.com/" state)]
@@ -125,7 +133,7 @@
     (let [[x :as xs] (:on-failure callbacks)]
       (is (= 1 (count xs))
           "The :on-failure callback is invoked once")
-      (is (= "Not found" x)
+      (is (= "Not found" (:message x))
           "The :on-failure callback is invoked with the body of the response"))
 
     (is (= 0 (count (:on-success callbacks)))
@@ -138,11 +146,147 @@
     done
     (let [state (atom blank-state)
           t (delay (assert-not-found state done))]
-      (with-redefs [http/get (mock-get state
+      (with-redefs [http/get (mock-request state
                                        {:status 404
                                         :body "Not found"})]
         (let [returned (invoke-get "https://myapp.com/" state)]
           (is (satisfies? Channel returned)
               "An async channel is returned")
           (a/go (a/<! returned)
+                (deref t)))))))
+
+(defn- assert-successful-post
+  [state done]
+  (let [{[c :as cs] :calls
+         callbacks :callbacks} @state]
+    (is (= 1 (count cs))
+        "cljs-http/post is called one time")
+    (is (= "https://myapp.com/things"
+           (first c))
+        "The URI is the 1st arg passed to cljs-http/get")
+    (is (= "application/json"
+           (get-in (second c) [:headers "Content-Type"]))
+        "The content-type header is application/json")
+    (is (= "application/json"
+           (get-in (second c) [:headers "Accept"]))
+        "The Accept header is application/json")
+
+    (is (= 1 (:callback callbacks))
+        "The :callback callback is invoked")
+
+    (let [[x :as xs] (:on-success callbacks)]
+      (is (= 1 (count xs))
+          "The :on-success callback is invoked once")
+      (is (= {:name "Albert"} x) ; TODO: Do I really need to jump through these hoops here?
+          "The :on-success callback is invoked with the body of the response"))
+
+    (is (= 0 (count (:on-failure callbacks)))
+        "The :on-failure callback is not invoked")
+
+    (done)))
+
+(deftest post-a-resource
+  (async
+    done
+    (let [state (atom blank-state)
+          t (delay (assert-successful-post state done))]
+      (with-redefs [http/post (mock-request state
+                                            {:status 200
+                                             :body {:name "Albert"}})]
+        (let [res (invoke-post "https://myapp.com/things" {:name "Albert"} state)]
+          (is (satisfies? Channel res)
+              "An async channel is returned")
+          (a/go (a/<! res)
+                (deref t)))))))
+
+(defn- assert-error-post
+  [state done]
+  (let [{[c :as cs] :calls
+         callbacks :callbacks} @state]
+    (is (= 1 (count cs))
+        "cljs-http/post is called one time")
+    (is (= "https://myapp.com/things"
+           (first c))
+        "The URI is the 1st arg passed to cljs-http/get")
+    (is (= "application/json"
+           (get-in (second c) [:headers "Content-Type"]))
+        "The content-type header is application/json")
+    (is (= "application/json"
+           (get-in (second c) [:headers "Accept"]))
+        "The Accept header is application/json")
+
+    (is (= 1 (:callback callbacks))
+        "The :callback callback is invoked")
+
+    (let [[x :as xs] (:on-failure callbacks)]
+      (is (= 1 (count xs))
+          "The :on-failure callback is invoked once")
+      (is (= "not found" (:message x))
+          "The :on-failure callback is invoked with the message from the body"))
+
+    (is (= 0 (count (:on-success callbacks)))
+        "The :on-success callback is not invoked")
+
+    (done)))
+
+(deftest post-a-resource-and-get-an-error
+  (async
+    done
+    (let [state (atom blank-state)
+          t (delay (assert-error-post state done))]
+      (with-redefs [http/post (mock-request state
+                                            {:status 404
+                                             :body {:message "not found"}})]
+        (let [res (invoke-post "https://myapp.com/things" {:name "Albert"} state)]
+          (is (satisfies? Channel res)
+              "An async channel is returned")
+          (a/go (a/<! res)
+                (deref t)))))))
+
+(defn- assert-invalid-post
+  [state done]
+  (let [{[c :as cs] :calls
+         callbacks :callbacks} @state]
+    (is (= 1 (count cs))
+        "cljs-http/post is called one time")
+    (is (= "https://myapp.com/things"
+           (first c))
+        "The URI is the 1st arg passed to cljs-http/get")
+    (is (= "application/json"
+           (get-in (second c) [:headers "Content-Type"]))
+        "The content-type header is application/json")
+    (is (= "application/json"
+           (get-in (second c) [:headers "Accept"]))
+        "The Accept header is application/json")
+
+    (is (= 1 (:callback callbacks))
+        "The :callback callback is invoked")
+
+    (let [[x :as xs] (:on-failure callbacks)]
+      (is (= 1 (count xs))
+          "The :on-failure callback is invoked once")
+      (is (= "Unprocessable entity"
+             (:message x))
+          "The :on-failure callback is invoked with a message about the error")
+      (is (= {:name ["Name is already in use"]}
+             (:errors (:data x)))
+          "The :on-failure callback is invoked with data from the body"))
+
+    (is (= 0 (count (:on-success callbacks)))
+        "The :on-success callback is not invoked")
+
+    (done)))
+
+(deftest post-a-resource-and-get-an-validation-error
+  (async
+    done
+    (let [state (atom blank-state)
+          t (delay (assert-invalid-post state done))]
+      (with-redefs [http/post (mock-request state
+                                            {:status 422
+                                             :body {:errors {:name ["Name is already in use"]}}})]
+        (let [res (invoke-post "https://myapp.com/things" {:name "Albert"} state)]
+          (is (satisfies? Channel res)
+              "An async channel is returned")
+          (a/go (a/<! res)
                 (deref t)))))))

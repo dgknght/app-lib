@@ -187,3 +187,8 @@
         #{:one :two}
         :one)
       "Conformance to a spec can be asserted"))
+
+#_(deftest assert-an-exception-with-ex-data
+  (is (dgknght.app-lib.test-assertions/thrown-with-ex-data?
+        {:one 1}
+        (throw (ex-info "Something went wrong" {:one 1})))))
