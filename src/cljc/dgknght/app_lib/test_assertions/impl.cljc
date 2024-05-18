@@ -284,7 +284,7 @@
        :cljs
        (str "missing:\n"
             (prn-str missing)
-            "extra:\n" 
+            "extra:\n"
             (prn-str extra)))))
 
 (defn url-like?
@@ -447,19 +447,25 @@
 
 (defn thrown-with-ex-data?
   [msg form]
-  (let [expected-data (safe-nth form 1)
-        body (drop 2 form)]
+  (let [expected-msg (safe-nth form 1)
+        expected-data (safe-nth form 2)
+        body (drop 3 form)]
     `(try
        ~@body
        {:type :fail
-        :expected ~expected-data
+        :expected {:ex-data ~expected-data
+                   :ex-message ~expected-msg}
         :actual "no exception was thrown"
         :message ~msg}
        (catch Exception e#
-         (let [actual-data# (ex-data e#)]
-           {:expected ~expected-data
-            :actual actual-data#
+         (let [actual-data# (ex-data e#)
+               actual-msg# (ex-message e#)]
+           {:expected {:ex-data ~expected-data
+                       :ex-message ~expected-msg}
+            :actual {:ex-data actual-data#
+                     :ex-message actual-msg#}
             :message ~msg
-            :type (if (= ~expected-data actual-data#)
+            :type (if (and (= ~expected-data actual-data#)
+                           (= ~expected-msg actual-msg#))
                     :pass
                     :fail)})))))
