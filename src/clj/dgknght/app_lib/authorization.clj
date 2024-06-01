@@ -88,7 +88,8 @@
    (+scope criteria ((:type-fn *config*) criteria) user))
   ([criteria model-type user]
    (if-let [s (scope model-type user)]
-     (if (empty? criteria)
-       s
-       [:and criteria s])
+     (with-meta (if (empty? criteria)
+                  s
+                  [:and criteria s])
+                (meta criteria))
      criteria)))
