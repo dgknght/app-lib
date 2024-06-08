@@ -35,6 +35,8 @@
        "invitation" "invitations"
        "child"      "children"
        "Child"      "Children"
+       "man"         "men"
+       "woman"       "women"
        :pony        :ponies
        :invitation  :invitations
        :child       :children
@@ -46,6 +48,8 @@
        "invitations" "invitation" 
        "children"    "child"      
        "Children"    "Child"
+       "men"         "man"
+       "women"       "woman"
        :ponies       :pony        
        :invitations  :invitation  
        :children     :child       

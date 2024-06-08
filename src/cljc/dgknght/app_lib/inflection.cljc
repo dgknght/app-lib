@@ -81,9 +81,10 @@
   type)
 
 (def ^:private ->singular-rules
-  [[#"(?i)^(child)ren$" second]
-   [#"^(.+)ies$"        #(str (second %) "y")]
-   [#"^(.+)s$"          second]])
+  [[#"(?i)^(child)ren$"    second]
+   [#"(?i)^((?:wo)?m)en$" #(str (second %) "an")]
+   [#"^(.+)ies$"           #(str (second %) "y")]
+   [#"^(.+)s$"             second]])
 
 (defmethod singular :default [x] x)
 
@@ -99,9 +100,10 @@
       keyword))
 
 (def ^:private ->plural-rules
-  [[#"(?i)^child$" #(str % "ren")]
-   [#"^(.+)y$"     #(str (second %) "ies")]
-   [#"^.+$"        #(str % "s")]])
+  [[#"(?i)^child$"        #(str % "ren")]
+   [#"(?i)^((?:wo)?m)an$" #(str (second %) "en")]
+   [#"^(.+)y$"            #(str (second %) "ies")]
+   [#"^.+$"               #(str % "s")]])
 
 (defmulti plural
   "Acceps a singular noun and attempts to convert it into plural"
