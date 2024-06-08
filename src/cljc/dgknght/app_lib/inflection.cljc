@@ -64,9 +64,12 @@
                     (:suffix %))
                  rules))))
 
-(defn- apply-matching-rule
-  [word {pattern :pattern f :fn}]
-  (when-let [match (re-find pattern word)]
+(defn- apply-word-rules
+  [word rules]
+  (let [[match f] (->> rules
+                   (map #(update-in % [0] (fn [p] (re-find p word))))
+                   (filter first)
+                   first)]
     (f match)))
 
 (defmulti singular
@@ -74,19 +77,15 @@
   type)
 
 (def ^:private ->singular-rules
-  [{:pattern #"(?i)\A(child)ren\z"
-    :fn second}
-   {:pattern #"\A(.+)ies\z"
-    :fn (fn [m] (str (second m) "y"))}
-   {:pattern #"\A(.+)s\z"
-    :fn second}])
+  [[#"(?i)\A(child)ren\z" second]
+   [#"\A(.+)ies\z"        (fn [m] (str (second m) "y"))]
+   [#"\A(.+)s\z"          second]])
 
 (defmethod singular :default [x] x)
 
 (defmethod singular ::string
   [word]
-  (some (partial apply-matching-rule word)
-        ->singular-rules))
+  (apply-word-rules word ->singular-rules))
 
 (defmethod singular ::keyword
   [word]
