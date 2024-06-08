@@ -82,7 +82,7 @@
 
 (def ^:private ->singular-rules
   [[#"(?i)\A(child)ren\z" second]
-   [#"\A(.+)ies\z"        (fn [m] (str (second m) "y"))]
+   [#"\A(.+)ies\z"        #(str (second %) "y")]
    [#"\A(.+)s\z"          second]])
 
 (defmethod singular :default [x] x)
@@ -99,9 +99,9 @@
       keyword))
 
 (def ^:private ->plural-rules
-  [[#"(?i)^child$" (fn [m] (str m "ren"))]
-   [#"^(.+)y$"     (fn [m] (str (second m) "ies"))]
-   [#"\A.+\z"      #(str % "s")]])
+  [[#"(?i)\Achild\z" #(str % "ren")]
+   [#"\A(.+)y\z"     #(str (second %) "ies")]
+   [#"\A.+\z"        #(str % "s")]])
 
 (defmulti plural
   "Acceps a singular noun and attempts to convert it into plural"
