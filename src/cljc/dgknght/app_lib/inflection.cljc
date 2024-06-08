@@ -51,11 +51,11 @@
   "Accepts a number and returns a string expressing the value
   as an ordinal. E.g., 1 => '1st'"
   [number]
-  (let [rules [{:pattern #"(?:[2-9]|\b|^)1\z"
+  (let [rules [{:pattern #"(?:[2-9]|\b|^)1$"
                 :suffix  "st"}
-               {:pattern #"(?:[2-9]|\b|^)2\z"
+               {:pattern #"(?:[2-9]|\b|^)2$"
                 :suffix "nd"}
-               {:pattern #"(?:[2-9]|\b|^)3\z"
+               {:pattern #"(?:[2-9]|\b|^)3$"
                 :suffix "rd"}
                {:pattern #"."
                 :suffix "th"}]
@@ -81,9 +81,9 @@
   type)
 
 (def ^:private ->singular-rules
-  [[#"(?i)\A(child)ren\z" second]
-   [#"\A(.+)ies\z"        #(str (second %) "y")]
-   [#"\A(.+)s\z"          second]])
+  [[#"(?i)^(child)ren$" second]
+   [#"^(.+)ies$"        #(str (second %) "y")]
+   [#"^(.+)s$"          second]])
 
 (defmethod singular :default [x] x)
 
@@ -99,9 +99,9 @@
       keyword))
 
 (def ^:private ->plural-rules
-  [[#"(?i)\Achild\z" #(str % "ren")]
-   [#"\A(.+)y\z"     #(str (second %) "ies")]
-   [#"\A.+\z"        #(str % "s")]])
+  [[#"(?i)^child$" #(str % "ren")]
+   [#"^(.+)y$"     #(str (second %) "ies")]
+   [#"^.+$"        #(str % "s")]])
 
 (defmulti plural
   "Acceps a singular noun and attempts to convert it into plural"
