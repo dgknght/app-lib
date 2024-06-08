@@ -1,10 +1,17 @@
 (ns dgknght.app-lib.inflection
   (:require [clojure.string :as string]
+            #?(:clj  [clojure.pprint :refer [pprint]]
+               :cljs [cljs.pprint :refer [pprint]])
             [dgknght.app-lib.core :refer [ensure-string]]
             #?(:cljs [goog.string :as gstr])))
 
-(derive clojure.lang.Keyword ::keyword)
-(derive java.lang.String ::string)
+#?(:clj (do
+          (derive clojure.lang.Keyword ::keyword)
+          (derive java.lang.String ::string))
+   :cljs (do
+          (derive cljs.core.Keyword ::keyword)
+          (derive js/String ::string)))
+
 
 (defn humanize
   "Accepts a value in kabob case and returns the value in human friendly form"
@@ -66,15 +73,20 @@
   "Accepts a plural noun and attempts to convert it into singular"
   type)
 
+(def ^:private ->singular-rules
+  [{:pattern #"(?i)\A(child)ren\z"
+    :fn second}
+   {:pattern #"\A(.+)ies\z"
+    :fn (fn [m] (str (second m) "y"))}
+   {:pattern #"\A(.+)s\z"
+    :fn second}])
+
 (defmethod singular :default [x] x)
 
 (defmethod singular ::string
   [word]
-  (let [rules [{:pattern #"(?i)\A(child)ren\z"
-                :fn second}
-               {:pattern #"(.+)s\z"
-                :fn second}]]
-    (some (partial apply-matching-rule word) rules)))
+  (some (partial apply-matching-rule word)
+        ->singular-rules))
 
 (defmethod singular ::keyword
   [word]
@@ -82,6 +94,14 @@
       name
       singular
       keyword))
+
+(def ^:private ->plural-rules
+  [{:pattern #"(?i)^child$"
+    :fn (fn [m] (str m "ren"))}
+   {:pattern #"^(.+)y$"
+    :fn (fn [m] (str (second m) "ies"))}
+   {:pattern #"\A.+\z"
+    :fn #(str % "s")}])
 
 (defmulti plural
   "Acceps a singular noun and attempts to convert it into plural"
@@ -91,11 +111,8 @@
 
 (defmethod plural ::string
   [word]
-  (let [rules [{:pattern #".*(?=y\z)"
-                  :fn (fn [match] (str match "ies"))}
-                 {:pattern #".*"
-                  :fn (fn [match] (str match "s"))}]]
-      (some (partial apply-matching-rule word) rules)))
+  (some (partial apply-matching-rule word)
+        ->plural-rules))
 
 (defmethod plural ::keyword
   [word]

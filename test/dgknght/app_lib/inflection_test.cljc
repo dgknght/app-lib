@@ -32,8 +32,9 @@
 (deftest pluralize-a-word
   (are [input expected] (= expected (i/plural input))
        "pony"       "ponies"
-       "invitation" "invidations"
+       "invitation" "invitations"
        "child"      "children"
+       "Child"      "Children"
        :pony        :ponies
        :invitation  :invitations
        :child       :children
@@ -42,8 +43,9 @@
 (deftest singularize-a-word
   (are [input expected] (= expected (i/singular input))
        "ponies"      "pony"       
-       "invidations" "invitation" 
+       "invitations" "invitation" 
        "children"    "child"      
+       "Children"    "Child"
        :ponies       :pony        
        :invitations  :invitation  
        :children     :child       
