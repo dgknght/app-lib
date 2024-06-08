@@ -64,13 +64,17 @@
                     (:suffix %))
                  rules))))
 
+(defn- apply-word-rule
+  [[match f]]
+  (f match))
+
 (defn- apply-word-rules
   [word rules]
-  (let [[match f] (->> rules
-                   (map #(update-in % [0] (fn [p] (re-find p word))))
-                   (filter first)
-                   first)]
-    (f match)))
+  (->> rules
+       (map #(update-in % [0] (fn [p] (re-find p word))))
+       (filter first)
+       (map apply-word-rule)
+       first))
 
 (defmulti singular
   "Accepts a plural noun and attempts to convert it into singular"
@@ -95,12 +99,9 @@
       keyword))
 
 (def ^:private ->plural-rules
-  [{:pattern #"(?i)^child$"
-    :fn (fn [m] (str m "ren"))}
-   {:pattern #"^(.+)y$"
-    :fn (fn [m] (str (second m) "ies"))}
-   {:pattern #"\A.+\z"
-    :fn #(str % "s")}])
+  [[#"(?i)^child$" (fn [m] (str m "ren"))]
+   [#"^(.+)y$"     (fn [m] (str (second m) "ies"))]
+   [#"\A.+\z"      #(str % "s")]])
 
 (defmulti plural
   "Acceps a singular noun and attempts to convert it into plural"
@@ -110,8 +111,7 @@
 
 (defmethod plural ::string
   [word]
-  (some (partial apply-matching-rule word)
-        ->plural-rules))
+  (apply-word-rules word ->plural-rules))
 
 (defmethod plural ::keyword
   [word]
