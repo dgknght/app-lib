@@ -3,6 +3,9 @@
             [dgknght.app-lib.core :refer [ensure-string]]
             #?(:cljs [goog.string :as gstr])))
 
+(derive clojure.lang.Keyword ::keyword)
+(derive java.lang.String ::string)
+
 (defn humanize
   "Accepts a value in kabob case and returns the value in human friendly form"
   [value]
@@ -59,8 +62,13 @@
   (when-let [match (re-find pattern word)]
     (f match)))
 
-(defn singular
+(defmulti singular
   "Accepts a plural noun and attempts to convert it into singular"
+  type)
+
+(defmethod singular :default [x] x)
+
+(defmethod singular ::string
   [word]
   (let [rules [{:pattern #"(?i)\A(child)ren\z"
                 :fn second}
@@ -68,21 +76,33 @@
                 :fn second}]]
     (some (partial apply-matching-rule word) rules)))
 
-(defn plural
-  "Acceps a singular noun and attempts to convert it into plural"
+(defmethod singular ::keyword
   [word]
-  {:pre [word]}
-  (let [[kw word] (if (keyword? word)
-                       [true (name word)]
-                       [false word])
-        rules [{:pattern #".*(?=y\z)"
-                :fn (fn [match] (str match "ies"))}
-               {:pattern #".*"
-                :fn (fn [match] (str match "s"))}]
-        result (some (partial apply-matching-rule word) rules)]
-    (if kw
-      (keyword result)
-      result)))
+  (-> word
+      name
+      singular
+      keyword))
+
+(defmulti plural
+  "Acceps a singular noun and attempts to convert it into plural"
+  type)
+
+(defmethod plural :default [x] x)
+
+(defmethod plural ::string
+  [word]
+  (let [rules [{:pattern #".*(?=y\z)"
+                  :fn (fn [match] (str match "ies"))}
+                 {:pattern #".*"
+                  :fn (fn [match] (str match "s"))}]]
+      (some (partial apply-matching-rule word) rules)))
+
+(defmethod plural ::keyword
+  [word]
+  (-> word
+      name
+      plural
+      keyword))
 
 (defn- fmt
   [msg & args]
