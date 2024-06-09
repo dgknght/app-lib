@@ -47,22 +47,23 @@
        (map title-case-word)
        (string/join "")))
 
+(def ^:private ordinal-rules
+  [[#"(?:[2-9]|\b|^)1$" "st"]
+   [#"(?:[2-9]|\b|^)2$" "nd"]
+   [#"(?:[2-9]|\b|^)3$" "rd"]
+   [#"."                "th"]])
+
 (defn ordinal
   "Accepts a number and returns a string expressing the value
   as an ordinal. E.g., 1 => '1st'"
   [number]
-  (let [rules [{:pattern #"(?:[2-9]|\b|^)1$"
-                :suffix  "st"}
-               {:pattern #"(?:[2-9]|\b|^)2$"
-                :suffix "nd"}
-               {:pattern #"(?:[2-9]|\b|^)3$"
-                :suffix "rd"}
-               {:pattern #"."
-                :suffix "th"}]
-        s (str number)]
-    (str s (some #(when (re-find (:pattern %) s)
-                    (:suffix %))
-                 rules))))
+  (let [s (str number)
+        suffix (->> ordinal-rules
+                    (map #(update-in % [0] (fn [x] (re-find x s))))
+                    (filter first)
+                    (map second)
+                    first)]
+    (str s suffix)))
 
 (defn- apply-word-rule
   [[match f]]
