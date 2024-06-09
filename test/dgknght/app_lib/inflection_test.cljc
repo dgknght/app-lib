@@ -35,8 +35,11 @@
        "invitation" "invitations"
        "child"      "children"
        "Child"      "Children"
-       "man"         "men"
-       "woman"       "women"
+       "man"        "men"
+       "woman"      "women"
+       "goose"      "geese"
+       "moose"      "moose"
+       "mouse"      "mice"
        :pony        :ponies
        :invitation  :invitations
        :child       :children
@@ -50,6 +53,9 @@
        "Children"    "Child"
        "men"         "man"
        "women"       "woman"
+       "geese"       "goose"
+       "moose"       "moose"
+       "mice"        "mouse"
        :ponies       :pony        
        :invitations  :invitation  
        :children     :child       

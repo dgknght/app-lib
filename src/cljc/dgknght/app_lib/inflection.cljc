@@ -82,6 +82,9 @@
 
 (def ^:private ->singular-rules
   [[#"(?i)^(child)ren$"    second]
+   [#"(?i)^moose$"         identity]
+   [#"(?i)^geese$"         (constantly "goose")]
+   [#"(?i)^mice$"          (constantly "mouse")]
    [#"(?i)^((?:wo)?m)en$" #(str (second %) "an")]
    [#"^(.+)ies$"           #(str (second %) "y")]
    [#"^(.+)s$"             second]])
@@ -101,6 +104,9 @@
 
 (def ^:private ->plural-rules
   [[#"(?i)^child$"        #(str % "ren")]
+   [#"(?i)^moose$"         identity]
+   [#"(?i)^goose$"         (constantly "geese")]
+   [#"(?i)^mouse$"         (constantly "mice")]
    [#"(?i)^((?:wo)?m)an$" #(str (second %) "en")]
    [#"^(.+)y$"            #(str (second %) "ies")]
    [#"^.+$"               #(str % "s")]])
