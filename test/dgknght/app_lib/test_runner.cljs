@@ -1,5 +1,6 @@
 (ns dgknght.app-lib.test-runner
   (:require [doo.runner :refer-macros [doo-tests]]
+            dgknght.app-lib.inflection-test
             dgknght.app-lib.test-assertions-test
             dgknght.app-lib.web-mocks-test
             dgknght.app-lib.api-async-test
@@ -16,7 +17,8 @@
             dgknght.app-lib.notifications-test
             dgknght.app-lib.busy-test))
 
-(doo-tests 'dgknght.app-lib.test-assertions-test
+(doo-tests 'dgknght.app-lib.inflection-test
+           'dgknght.app-lib.test-assertions-test
            'dgknght.app-lib.web-mocks-test
            'dgknght.app-lib.forms-validation-test
            'dgknght.app-lib.core-test

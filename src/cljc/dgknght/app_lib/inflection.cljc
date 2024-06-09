@@ -1,7 +1,17 @@
 (ns dgknght.app-lib.inflection
   (:require [clojure.string :as string]
+            #?(:clj  [clojure.pprint :refer [pprint]]
+               :cljs [cljs.pprint :refer [pprint]])
             [dgknght.app-lib.core :refer [ensure-string]]
             #?(:cljs [goog.string :as gstr])))
+
+#?(:clj (do
+          (derive clojure.lang.Keyword ::keyword)
+          (derive java.lang.String ::string))
+   :cljs (do
+          (derive cljs.core.Keyword ::keyword)
+          (derive js/String ::string)))
+
 
 (defn humanize
   "Accepts a value in kabob case and returns the value in human friendly form"
@@ -37,52 +47,87 @@
        (map title-case-word)
        (string/join "")))
 
+(def ^:private ordinal-rules
+  [[#"(?:[2-9]|\b|^)1$" "st"]
+   [#"(?:[2-9]|\b|^)2$" "nd"]
+   [#"(?:[2-9]|\b|^)3$" "rd"]
+   [#"."                "th"]])
+
 (defn ordinal
   "Accepts a number and returns a string expressing the value
   as an ordinal. E.g., 1 => '1st'"
   [number]
-  (let [rules [{:pattern #"(?:[2-9]|\b|^)1\z"
-                :suffix  "st"}
-               {:pattern #"(?:[2-9]|\b|^)2\z"
-                :suffix "nd"}
-               {:pattern #"(?:[2-9]|\b|^)3\z"
-                :suffix "rd"}
-               {:pattern #"."
-                :suffix "th"}]
-        s (str number)]
-    (str s (some #(when (re-find (:pattern %) s)
-                    (:suffix %))
-                 rules))))
+  (let [s (str number)
+        suffix (->> ordinal-rules
+                    (map #(update-in % [0] (fn [x] (re-find x s))))
+                    (filter first)
+                    (map second)
+                    first)]
+    (str s suffix)))
 
-(defn- apply-matching-rule
-  [word {pattern :pattern f :fn}]
-  (when-let [match (re-find pattern word)]
-    (f match)))
+(defn- apply-word-rule
+  [[match f]]
+  (f match))
 
-(defn singular
+(defn- apply-word-rules
+  [word rules]
+  (->> rules
+       (map #(update-in % [0] (fn [p] (re-find p word))))
+       (filter first)
+       (map apply-word-rule)
+       first))
+
+(defmulti singular
   "Accepts a plural noun and attempts to convert it into singular"
-  [word]
-  (let [rules [{:pattern #"(?i)\A(child)ren\z"
-                :fn second}
-               {:pattern #"(.+)s\z"
-                :fn second}]]
-    (some (partial apply-matching-rule word) rules)))
+  type)
 
-(defn plural
-  "Acceps a singular noun and attempts to convert it into plural"
+(def ^:private ->singular-rules
+  [[#"(?i)^(child)ren$"    second]
+   [#"(?i)^moose$"         identity]
+   [#"(?i)^geese$"         (constantly "goose")]
+   [#"(?i)^mice$"          (constantly "mouse")]
+   [#"(?i)^((?:wo)?m)en$" #(str (second %) "an")]
+   [#"^(.+)ies$"           #(str (second %) "y")]
+   [#"^(.+)s$"             second]])
+
+(defmethod singular :default [x] x)
+
+(defmethod singular ::string
   [word]
-  {:pre [word]}
-  (let [[kw word] (if (keyword? word)
-                       [true (name word)]
-                       [false word])
-        rules [{:pattern #".*(?=y\z)"
-                :fn (fn [match] (str match "ies"))}
-               {:pattern #".*"
-                :fn (fn [match] (str match "s"))}]
-        result (some (partial apply-matching-rule word) rules)]
-    (if kw
-      (keyword result)
-      result)))
+  (apply-word-rules word ->singular-rules))
+
+(defmethod singular ::keyword
+  [word]
+  (-> word
+      name
+      singular
+      keyword))
+
+(def ^:private ->plural-rules
+  [[#"(?i)^child$"        #(str % "ren")]
+   [#"(?i)^moose$"         identity]
+   [#"(?i)^goose$"         (constantly "geese")]
+   [#"(?i)^mouse$"         (constantly "mice")]
+   [#"(?i)^((?:wo)?m)an$" #(str (second %) "en")]
+   [#"^(.+)y$"            #(str (second %) "ies")]
+   [#"^.+$"               #(str % "s")]])
+
+(defmulti plural
+  "Acceps a singular noun and attempts to convert it into plural"
+  type)
+
+(defmethod plural :default [x] x)
+
+(defmethod plural ::string
+  [word]
+  (apply-word-rules word ->plural-rules))
+
+(defmethod plural ::keyword
+  [word]
+  (-> word
+      name
+      plural
+      keyword))
 
 (defn- fmt
   [msg & args]
