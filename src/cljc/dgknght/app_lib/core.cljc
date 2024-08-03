@@ -7,7 +7,14 @@
                :cljs [cljs.pprint :refer [pprint]])
             #?(:cljs [goog.string :as gstr])
             #?(:cljs [dgknght.app-lib.decimal :as d]))
-  #?(:clj (:import java.util.UUID clojure.lang.IDeref)))
+  #?(:clj (:import java.util.UUID clojure.lang.IDeref
+                   clojure.lang.PersistentVector
+                   clojure.lang.PersistentArrayMap
+                   clojure.lang.PersistentHashMap)))
+
+(derive PersistentVector ::vector)
+(derive PersistentArrayMap ::map)
+(derive PersistentHashMap ::map)
 
 (defn format
   [msg & args]
@@ -162,22 +169,21 @@
 (declare prune-map)
 
 (defmulti prune-to
-  (fn [_target source]
-    (cond
-      (map? source) :map
-      (and (sequential? source)
-           (map? (first source))) :sequence)))
+  (fn [& args]
+    (mapv type args)))
 
-(defmethod prune-to :map
+(defmethod prune-to [::map ::map]
   [target source]
   (prune-map target source (keys source)))
 
-(defmethod prune-to :sequence
+(defmethod prune-to [::vector ::vector]
   [target source]
-  (let [ks (set (mapcat keys source))
-        src (concat source (repeat {}))]
-    (map-indexed #(prune-map %2 (nth src %1) ks)
-                 target)))
+  (if (map? (first source))
+    (let [ks (set (mapcat keys source))
+          src (concat source (repeat {}))]
+      (vec (map-indexed #(prune-map %2 (nth src %1) ks)
+                        target)))
+    target))
 
 (defmethod prune-to :default
   [target _source]
