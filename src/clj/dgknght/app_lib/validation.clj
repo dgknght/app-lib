@@ -2,6 +2,7 @@
   (:refer-clojure :exclude [format])
   (:require [clojure.core :as c]
             [clojure.spec.alpha :as s]
+            [clojure.pprint :refer [pprint]]
             [dgknght.app-lib.web :refer [email-pattern] ]
             [dgknght.app-lib.inflection :refer [humanize
                                                 conjoin]])
@@ -212,9 +213,11 @@
 
 (defn- ->errors
   [{::s/keys [problems]}]
-  (reduce append-error
-          {}
-          problems))
+  (->> problems
+       (remove #(= ::s/nil ; this can cause problems with nested maps and I don't think it ever expresses meaningful information
+                   (last (:path %))))
+       (reduce append-error
+               {})))
 
 (defn validate
   "Validates the specified model using the specified spec"
