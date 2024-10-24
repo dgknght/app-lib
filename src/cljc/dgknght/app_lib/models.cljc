@@ -1,5 +1,6 @@
 (ns dgknght.app-lib.models
-  (:require [clojure.string :as string]))
+  (:require [clojure.string :as string]
+            [clojure.pprint :refer [pprint]]))
 
 (defn ->id
   "Given a model with the id is stored at :id, or the id iteself, return the id.
@@ -28,15 +29,17 @@
 (defn- append-children
   [item grouped-items {:keys [id-fn
                               decorate-child-fn
-                              decorate-parent-fn]
+                              decorate-parent-fn
+                              children-key]
                        :or {decorate-parent-fn identity
                             decorate-child-fn (fn [c _] c)
-                            id-fn :id}
+                            id-fn :id
+                            children-key :children}
                        :as opts}]
   (if-let [children (get-in grouped-items [(id-fn item)])]
     (decorate-parent-fn
       (assoc item
-             :children
+             children-key
              (map (comp #(decorate-child-fn % item)
                         #(append-children % grouped-items opts))
                   children)))
@@ -65,12 +68,14 @@
   [item {:keys [id-fn
                 path-segment-fn
                 parent-ids
-                parent-path]
+                parent-path
+                children-key]
          :as options
          :or {parent-ids '()
               parent-path []
               id-fn :id
-              path-segment-fn :name}}]
+              path-segment-fn :name
+              children-key :children}}]
   (let [path (conj parent-path (path-segment-fn item))
         ids (conj parent-ids (id-fn item))]
     (concat [(-> item
@@ -81,7 +86,7 @@
             (mapcat #(unnest-item % (assoc options
                                            :parent-path path
                                            :parent-ids ids))
-                    (:children item)))))
+                    (children-key item)))))
 
 (defn unnest
   "Given a nested collection, return a flattened list"
