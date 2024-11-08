@@ -58,8 +58,8 @@
   [msg form]
   (let [expected (safe-nth form 1)
         actual (safe-nth form 2)]
-    `(let [actual# (->> ~actual
-                        (interleave ~expected)
+    `(let [actual# (->> ~expected
+                        (interleave ~actual)
                         (partition 2)
                         (mapv #(apply prune-to %)))
            result# (if (= ~expected actual#)
