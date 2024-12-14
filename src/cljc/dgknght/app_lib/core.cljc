@@ -8,13 +8,19 @@
             #?(:cljs [goog.string :as gstr])
             #?(:cljs [dgknght.app-lib.decimal :as d]))
   #?(:clj (:import java.util.UUID clojure.lang.IDeref
+                   clojure.lang.PersistentList
                    clojure.lang.PersistentVector
                    clojure.lang.PersistentArrayMap
-                   clojure.lang.PersistentHashMap)))
+                   clojure.lang.PersistentHashMap
+                   clojure.lang.LazySeq)))
 
 (derive PersistentVector ::vector)
+(derive PersistentList ::list)
 (derive PersistentArrayMap ::map)
 (derive PersistentHashMap ::map)
+(derive LazySeq ::sequential)
+(derive ::vector ::sequential)
+(derive ::list ::sequential)
 
 (defn format
   [msg & args]
@@ -176,7 +182,7 @@
   [target source]
   (prune-map target source (keys source)))
 
-(defmethod prune-to [::vector ::vector]
+(defmethod prune-to [::sequential ::sequential]
   [target source]
   (if (map? (first source))
     (let [ks (set (mapcat keys source))
