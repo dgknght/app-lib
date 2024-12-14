@@ -68,21 +68,27 @@
   [item {:keys [id-fn
                 path-segment-fn
                 parent-ids
+                parent-ids-key
                 parent-path
-                children-key]
+                children-key
+                child-count-key
+                path-key]
          :as options
          :or {parent-ids '()
               parent-path []
+              parent-ids-key :parent-ids
               id-fn :id
               path-segment-fn :name
-              children-key :children}}]
+              children-key :children
+              child-count-key :child-count
+              path-key :path}}]
   (let [path (conj parent-path (path-segment-fn item))
         ids (conj parent-ids (id-fn item))]
     (concat [(-> item
-                 (assoc :path path
-                        :parent-ids parent-ids
-                        :child-count (count (:children item)))
-                 (dissoc :children))]
+                 (assoc path-key path
+                        parent-ids-key parent-ids
+                        child-count-key (count (children-key item)))
+                 (dissoc children-key))]
             (mapcat #(unnest-item % (assoc options
                                            :parent-path path
                                            :parent-ids ids))
