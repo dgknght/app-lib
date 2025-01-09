@@ -14,13 +14,27 @@
                    clojure.lang.PersistentHashMap
                    clojure.lang.LazySeq)))
 
-(derive PersistentVector ::vector)
-(derive PersistentList ::list)
-(derive PersistentArrayMap ::map)
-(derive PersistentHashMap ::map)
+(derive #?(:clj PersistentVector
+           :cljs cljs.core/PersistentVector)
+        ::vector)
+(derive #?(:clj PersistentList
+           :cljs cljs.core/List)
+        ::list)
+(derive #?(:clj clojure.lang.PersistentList$EmptyList
+           :cljs cljs.core/EmptyList)
+        ::list)
+(derive #?(:clj PersistentArrayMap
+           :cljs cljs.core/PersistentArrayMap)
+        ::map)
+(derive #?(:clj PersistentHashMap
+           :cljs cljs.core/PersistentHashMap)
+        ::map)
 (derive LazySeq ::sequential)
 (derive ::vector ::sequential)
 (derive ::list ::sequential)
+(derive #?(:clj clojure.lang.MapEntry
+           :cljs cljs.core/MapEntry)
+        ::map-entry)
 
 (defn format
   [msg & args]
