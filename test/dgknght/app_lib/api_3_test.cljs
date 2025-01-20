@@ -4,7 +4,6 @@
             [cljs.core.async :as a]
             [cljs.core.async.impl.protocols :refer [Channel]]
             [cljs-http.client :as http]
-            [goog.string :refer [format]]
             [dgknght.app-lib.api-3 :as api]))
 
 ; - on 2XX, call on-success
@@ -12,7 +11,6 @@
 ; - on exception call on-error. If on-error returns nil
 ;   - call on-failure
 ;   - call on-success
-
 
 ; - :on-success is called when the call succeeds (2XX status)
 ; - :on-failure is called when the call fails
@@ -80,8 +78,8 @@
   (api/get url (callbacks state)))
 
 (defn- invoke-post
-  [url resource state]
-  (api/post url resource (callbacks state)))
+  [url resource state & {:as opts}]
+  (api/post url resource (merge opts (callbacks state))))
 
 (defn- mock-request
   [state response]
@@ -156,14 +154,31 @@
                 (deref t)))))))
 
 (defn- assert-successful-post
+  [calls callbacks]
+  (is (= 1 (count calls))
+      "cljs-http/post is called one time")
+  (is (= "https://myapp.com/things"
+         (first calls))
+      "The URI is the 1st arg passed to cljs-http/post")
+
+  (is (= 1 (:callback callbacks))
+      "The :callback callback is invoked one time")
+
+  (let [[x :as xs] (:on-success callbacks)]
+    (is (= 1 (count xs))
+        "The :on-success callback is invoked once")
+    (is (= {:name "Albert"} x) ; TODO: Do I really need to jump through these hoops here?
+        "The :on-success callback is invoked with the body of the response"))
+
+  (is (= 0 (count (:on-failure callbacks)))
+      "The :on-failure callback is not invoked"))
+
+(defn- assert-successful-post-with-json
   [state done]
   (let [{[c :as cs] :calls
          callbacks :callbacks} @state]
-    (is (= 1 (count cs))
-        "cljs-http/post is called one time")
-    (is (= "https://myapp.com/things"
-           (first c))
-        "The URI is the 1st arg passed to cljs-http/get")
+    (assert-successful-post cs callbacks)
+
     (is (= "application/json"
            (get-in (second c) [:headers "Content-Type"]))
         "The content-type header is application/json")
@@ -171,29 +186,66 @@
            (get-in (second c) [:headers "Accept"]))
         "The Accept header is application/json")
 
-    (is (= 1 (:callback callbacks))
-        "The :callback callback is invoked")
-
-    (let [[x :as xs] (:on-success callbacks)]
-      (is (= 1 (count xs))
-          "The :on-success callback is invoked once")
-      (is (= {:name "Albert"} x) ; TODO: Do I really need to jump through these hoops here?
-          "The :on-success callback is invoked with the body of the response"))
-
-    (is (= 0 (count (:on-failure callbacks)))
-        "The :on-failure callback is not invoked")
-
     (done)))
 
-(deftest post-a-resource
+(deftest post-a-resource-with-default-content-type
   (async
     done
     (let [state (atom blank-state)
-          t (delay (assert-successful-post state done))]
+          t (delay (assert-successful-post-with-json state done))]
       (with-redefs [http/post (mock-request state
                                             {:status 200
                                              :body {:name "Albert"}})]
         (let [res (invoke-post "https://myapp.com/things" {:name "Albert"} state)]
+          (is (satisfies? Channel res)
+              "An async channel is returned")
+          (a/go (a/<! res)
+                (deref t)))))))
+
+(deftest post-a-resource-with-json
+  (async
+    done
+    (let [state (atom blank-state)
+          t (delay (assert-successful-post-with-json state done))]
+      (with-redefs [http/post (mock-request state
+                                            {:status 200
+                                             :body {:name "Albert"}})]
+        (let [res (invoke-post "https://myapp.com/things"
+                               {:name "Albert"}
+                               state
+                               {:encoding :json})]
+          (is (satisfies? Channel res)
+              "An async channel is returned")
+          (a/go (a/<! res)
+                (deref t)))))))
+
+(defn- assert-successful-post-with-edn
+  [state done]
+  (let [{[c :as cs] :calls
+         callbacks :callbacks} @state]
+    (assert-successful-post cs callbacks)
+
+    (is (= "application/edn"
+           (get-in (second c) [:headers "Content-Type"]))
+        "The content-type header is application/edn")
+    (is (= "application/edn"
+           (get-in (second c) [:headers "Accept"]))
+        "The Accept header is application/edn")
+
+    (done)))
+
+(deftest post-a-resource-with-edn
+  (async
+    done
+    (let [state (atom blank-state)
+          t (delay (assert-successful-post-with-edn state done))]
+      (with-redefs [http/post (mock-request state
+                                            {:status 200
+                                             :body {:user/name "Albert"}})]
+        (let [res (invoke-post "https://myapp.com/things"
+                               {:user/name "Albert"}
+                               state
+                               :encoding :edn)]
           (is (satisfies? Channel res)
               "An async channel is returned")
           (a/go (a/<! res)

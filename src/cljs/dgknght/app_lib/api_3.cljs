@@ -7,10 +7,6 @@
 
 (defrecord Error [message data])
 
-(def default-opts
-  {:headers {"Content-Type" "application/json"
-             "Accept" "application/json"}})
-
 (def path og/path)
 
 (defn- singular?
@@ -81,11 +77,15 @@
         (on-failure res)
         (on-success res)))))
 
+(defn- resource-key
+  [{:keys [encoding] :or [encoding :json]}]
+  (keyword (str (name encoding) "-params")))
+
 (defn- build-req
-  [opts]
-  (-> default-opts
-      (merge opts)
-      (update-in [:channel] #(or % (build-chan opts)))))
+  ([opts] (build-req nil opts))
+  ([resource opts]
+   (cond-> (update-in opts [:channel] #(or % (build-chan opts)))
+     resource (assoc (resource-key opts) resource))))
 
 (defn get
   ([uri] (get uri {}))
@@ -98,7 +98,7 @@
   ([uri resource] (post uri resource {}))
   ([uri resource opts]
    (wait-and-callback
-     (http/post uri (assoc (build-req opts) :json-params resource))
+     (http/post uri (build-req opts resource))
      opts)))
 
 (defn patch
