@@ -12,14 +12,19 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v3
-    - name: Install dependencies
-      run: lein deps
-    - name: Run clj tests
-      run: lein cloverage
-    - name: Install Karma CLI
-      run: npm install -g karma-cli
-    - name: Install other packages
-      run: npm install
-    - name: Run cljs tests
-      run: lein doo once
+      - name: Checkout source code
+        uses: actions/checkout@v4
+      - name: Install clojure tools
+        uses: DeLaGuardo/setup-clojure@13.0
+        with:
+          lein: 2.11.1
+      - name: Install dependencies
+        run: lein deps
+      - name: Run clj tests
+        run: lein cloverage
+      - name: Install Karma CLI
+        run: npm install -g karma-cli
+      - name: Install other packages
+        run: npm install
+      - name: Run cljs tests
+        run: lein doo once
