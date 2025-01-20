@@ -27,21 +27,23 @@
         (into {}))))
 
 (defn- append-children
-  [item grouped-items {:keys [id-fn
-                              decorate-child-fn
-                              decorate-parent-fn
-                              children-key]
-                       :or {decorate-parent-fn identity
-                            decorate-child-fn (fn [c _] c)
-                            id-fn :id
-                            children-key :children}
-                       :as opts}]
-  (if-let [children (get-in grouped-items [(id-fn item)])]
+  [item by-parent {:keys [id-fn
+                          decorate-child-fn
+                          decorate-parent-fn
+                          children-key
+                          sort-key-fn]
+                   :or {decorate-parent-fn identity
+                        decorate-child-fn (fn [c _] c)
+                        sort-key-fn :identity
+                        id-fn :id
+                        children-key :children}
+                   :as opts}]
+  (if-let [children (seq (sort-by sort-key-fn (get-in by-parent [(id-fn item)])))]
     (decorate-parent-fn
       (assoc item
              children-key
              (map (comp #(decorate-child-fn % item)
-                        #(append-children % grouped-items opts))
+                        #(append-children % by-parent opts))
                   children)))
     item))
 
@@ -52,6 +54,7 @@
   options:
     :id-fn              - A key or fn that extracts the id from each model. Defaults to :id.
     :parent-fn          - A key or fn that extracts the parent id from each model. Defaults to :parent-id.
+    :sort-key-fn        - A fn that extracts the sort value for each model.
     :decorate-child-fn  - A function that receives a child and parent when the child is added to the parent
     :decorate-parent-fn - A function that receives each model that has children with the model as the first argument and the children as the second and returns the model."
   ([collection] (nest {} collection))
@@ -59,10 +62,10 @@
      :or {parent-fn :parent-id}
      :as opts}
     collection]
-   (let [grouped (group-by parent-fn collection)]
+   (let [by-parent (group-by parent-fn collection)]
      (->> collection
           (remove parent-fn)
-          (mapv #(append-children % grouped opts))))))
+          (mapv #(append-children % by-parent opts))))))
 
 (defn- unnest-item
   [item {:keys [id-fn
