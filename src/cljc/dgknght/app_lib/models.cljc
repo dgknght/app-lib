@@ -38,7 +38,7 @@
                         id-fn :id
                         children-key :children}
                    :as opts}]
-  (if-let [children (sort-by sort-key-fn (get-in by-parent [(id-fn item)]))]
+  (if-let [children (seq (sort-by sort-key-fn (get-in by-parent [(id-fn item)])))]
     (decorate-parent-fn
       (assoc item
              children-key
