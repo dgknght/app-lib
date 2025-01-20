@@ -77,15 +77,23 @@
         (on-failure res)
         (on-success res)))))
 
-(defn- resource-key
-  [{:keys [encoding] :or [encoding :json]}]
-  (keyword (str (name encoding) "-params")))
+(defn- resolve-encoding
+  [{:keys [encoding]
+    :or {encoding :json}}]
+  (let [type (name encoding)]
+    {:param-key (keyword (str type "-params"))
+     :content-type (str "application/" type)}))
 
 (defn- build-req
   ([opts] (build-req nil opts))
   ([resource opts]
-   (cond-> (update-in opts [:channel] #(or % (build-chan opts)))
-     resource (assoc (resource-key opts) resource))))
+   (let [{:keys [param-key content-type]} (resolve-encoding opts)]
+     (cond-> (-> opts
+                 (dissoc :encoding)
+                 (update-in [:channel] #(or % (build-chan opts)))
+                 (assoc-in [:headers "Content-Type"] content-type)
+                 (assoc-in [:headers "Accept"] content-type))
+       resource (assoc param-key resource)))))
 
 (defn get
   ([uri] (get uri {}))
@@ -98,14 +106,14 @@
   ([uri resource] (post uri resource {}))
   ([uri resource opts]
    (wait-and-callback
-     (http/post uri (build-req opts resource))
+     (http/post uri (build-req resource opts))
      opts)))
 
 (defn patch
   ([uri resource] (patch uri resource {}))
   ([uri resource opts]
    (wait-and-callback
-     (http/patch uri (assoc (build-req opts) :json-params resource))
+     (http/patch uri (build-req resource opts))
      opts)))
 
 (defn delete
