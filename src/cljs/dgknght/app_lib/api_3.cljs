@@ -23,7 +23,8 @@
     []))
 
 (def ^:private status-msgs
-  {404 "Not found"
+  {400 "Bad request"
+   404 "Not found"
    403 "Forbidden"
    401 "Unauthorized"
    422 "Unprocessable entity"
@@ -31,8 +32,8 @@
 
 (defn- extract-msg
   [{:keys [body status]}]
-  (or (:message body)
-      (:error body)
+  (or (:error body)
+      (:message body)
       (status-msgs status)
       "Unknown"))
 
@@ -40,9 +41,11 @@
   [{:keys [status] :as res}]
   (if (<= 200 status 299)
     res
-    (if (= 422 status)
-      (throw (ex-info "Unprocessable entity" (:body res)))
-      (throw (ex-info (extract-msg res) {})))))
+    (throw
+      (case status
+        400 (ex-info "Bad request" (:body res))
+        422 (ex-info "Unprocessable entity" (:body res))
+        (ex-info (extract-msg res) {})))))
 
 (defn- build-xf
   [{:keys [pre-xf post-xf]}]
