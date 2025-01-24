@@ -1,5 +1,7 @@
 (ns dgknght.app-lib.test-test
   (:require [clojure.test :refer [deftest is testing]]
+            [clojure.edn :as edn]
+            [ring.util.response :as res]
             [cheshire.core :as json]
             [crouton.html :as html]
             [dgknght.app-lib.test :as t]
@@ -57,6 +59,36 @@
         (t/parse-json-body {:body "{}"
                             :json-body {}}))
       (is (empty? @calls) "The parser is not invoked"))))
+
+(deftest parse-an-edn-body
+  (testing "a map with :body"
+    (is (comparable?
+          {:edn-body {:user/first-name "John"}}
+          (t/parse-edn-body
+            {:body "{:user/first-name \"John\"}"}))
+        "The response is returned with the parsed body at :edn-body"))
+  (testing "a no-content response"
+    (is (= {:status 204
+            :edn-body nil}
+           (t/parse-edn-body {:status 204}))))
+  (testing "a json response"
+    (let [res (-> (res/response "{\"firstName\":\"John\"}")
+                  (res/status 200)
+                  (res/content-type "application/json"))]
+      (is (= res (t/parse-edn-body res))
+          "The response is returned unchanged")))
+  (testing "invalid edn"
+    (is (comparable?
+          {:edn-body {:parse-error "Invalid token: :"}}
+          (t/parse-edn-body {:body "{\"firstName\":\"John\"}"}))))
+  (testing "already parsed"
+    (let [calls (atom [])]
+      (with-redefs [edn/read-string (fn [& args]
+                                      (swap! calls conj args)
+                                      {})]
+        (t/parse-edn-body {:body "{}"
+                            :edn-body {}}))
+      (is (empty? @calls) "The reader is not invoked"))))
 
 (deftest add-a-user-agent-to-a-request
   (is (= {:headers {"user-agent" "custom-agent"}}

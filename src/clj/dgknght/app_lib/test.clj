@@ -1,9 +1,27 @@
 (ns dgknght.app-lib.test
-  (:require [cheshire.core :as json]
+  (:require [clojure.edn :as edn]
+            [clojure.pprint :refer [pprint]]
+            [ring.util.response :as res]
+            [cheshire.core :as json]
             [crouton.html :as html]
             [dgknght.app-lib.core :refer [safe-nth]]
             [dgknght.app-lib.validation])
   (:import com.fasterxml.jackson.core.JsonParseException))
+
+(defn- content-type
+  [res]
+  (when-let [entry (res/find-header res "Content-Type")]
+    (val entry)))
+
+(defn- not-json-content?
+  [res]
+  (when-let [content-type (content-type res)]
+    (not= "application/json" content-type)))
+
+(defn- not-edn-content?
+  [res]
+  (when-let [content-type (content-type res)]
+    (not= "application/edn" content-type)))
 
 (defn parse-html-body
   [{:keys [body html-body] :as response}]
@@ -19,12 +37,27 @@
          (or (= 204 (:status response))
              (string? (:body response)))]}
 
-  (if json-body
+  (if (or json-body
+          (not-json-content? response))
     response
     (try
       (assoc response :json-body (json/parse-string body true))
       (catch JsonParseException e
         (assoc response :json-body {:parse-error (.getMessage e)})))))
+
+(defn parse-edn-body
+  [{:as res :keys [edn-body body]}]
+  {:pre [(map? res)
+         (or (= 204 (:status res))
+             (string? (:body res)))]}
+
+  (if (or edn-body
+          (not-edn-content? res))
+    res
+    (try
+      (assoc res :edn-body (edn/read-string body))
+      (catch RuntimeException e
+        (assoc res :edn-body {:parse-error (.getMessage e)})))))
 
 (defmacro with-mail-capture
   "Intercepts calls to postal.core/send-message and places them in an

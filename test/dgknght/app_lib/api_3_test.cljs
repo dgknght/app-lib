@@ -4,7 +4,6 @@
             [cljs.core.async :as a]
             [cljs.core.async.impl.protocols :refer [Channel]]
             [cljs-http.client :as http]
-            [goog.string :refer [format]]
             [dgknght.app-lib.api-3 :as api]))
 
 ; - on 2XX, call on-success
@@ -12,7 +11,6 @@
 ; - on exception call on-error. If on-error returns nil
 ;   - call on-failure
 ;   - call on-success
-
 
 ; - :on-success is called when the call succeeds (2XX status)
 ; - :on-failure is called when the call fails
@@ -25,36 +23,6 @@
    :callbacks {:on-success []
                :on-failure []
                :callback 0}})
-
-(defn- assert-successful-get
-  [state done]
-  (let [{[c :as cs] :calls
-         callbacks :callbacks} @state]
-    (is (= 1 (count cs))
-        "cljs-http/get is called one time")
-    (is (= "https://myapp.com/"
-           (first c))
-        "The URI is the 1st arg passed to cljs-http/get")
-    (is (= "application/json"
-           (get-in (second c) [:headers "Content-Type"]))
-        "The content-type header is application/json")
-    (is (= "application/json"
-           (get-in (second c) [:headers "Accept"]))
-        "The Accept header is application/json")
-
-    (is (= 1 (:callback callbacks))
-        "The :callback callback is invoked")
-
-    (let [[x :as xs] (:on-success callbacks)]
-      (is (= 1 (count xs))
-          "The :on-success callback is invoked once")
-      (is (= "OK" x)
-          "The :on-success callback is invoked with the body of the response"))
-
-    (is (= 0 (count (:on-failure callbacks)))
-        "The :on-failure callback is not invoked")
-
-    (done)))
 
 (defn- callbacks
   [state]
@@ -76,12 +44,12 @@
    :callback #(swap! state update-in [:callbacks :callback] inc)})
 
 (defn- invoke-get
-  [url state]
-  (api/get url (callbacks state)))
+  [url state & {:as opts}]
+  (api/get url (merge opts (callbacks state))))
 
 (defn- invoke-post
-  [url resource state]
-  (api/post url resource (callbacks state)))
+  [url resource state & {:as opts}]
+  (api/post url resource (merge opts (callbacks state))))
 
 (defn- mock-request
   [state response]
@@ -95,15 +63,82 @@
       (a/go (a/>! c response))
       res)))
 
-(deftest get-a-resource
+(defn- assert-successful-get
+  [calls callbacks]
+  (is (= 1 (count calls))
+      "cljs-http/get is called one time")
+  (is (= "https://myapp.com/"
+         (ffirst calls))
+      "The URI is the 1st arg passed to cljs-http/get")
+
+  (is (= 1 (:callback callbacks))
+      "The :callback callback is invoked")
+
+  (let [[x :as xs] (:on-success callbacks)]
+    (is (= 1 (count xs))
+        "The :on-success callback is invoked once")
+    (is (= "OK" x)
+        "The :on-success callback is invoked with the body of the response"))
+
+  (is (= 0 (count (:on-failure callbacks)))
+      "The :on-failure callback is not invoked"))
+
+(defn- assert-successful-get-with-json
+  [state done]
+  (let [{[call :as calls] :calls
+         callbacks :callbacks} @state]
+    (assert-successful-get calls callbacks)
+
+    (is (= "application/json"
+           (get-in (second call) [:headers "Content-Type"]))
+        "The GET content-type header is application/json")
+    (is (= "application/json"
+           (get-in (second call) [:headers "Accept"]))
+        "The GET Accept header is application/json")
+
+    (done)))
+
+(deftest get-a-resource-with-json
   (async
     done
     (let [state (atom blank-state)
-          t (delay (assert-successful-get state done))]
+          t (delay (assert-successful-get-with-json state done))]
       (with-redefs [http/get (mock-request state
                                        {:status 200
                                         :body "OK"})]
         (let [returned (invoke-get "https://myapp.com/" state)]
+          (is (satisfies? Channel returned)
+              "An async channel is returned")
+          (a/go (let [final-result (a/<! returned)]
+                  (is (= "OK" final-result)
+                      "The body is the final result")
+                  (deref t))))))))
+
+(defn- assert-successful-get-with-edn
+  [state done]
+  (let [{[call :as calls] :calls
+         callbacks :callbacks} @state]
+
+    (assert-successful-get calls callbacks)
+
+    (is (= "application/edn"
+           (get-in (second call) [:headers "Content-Type"]))
+        "The GET content-type header is application/edn")
+    (is (= "application/edn"
+           (get-in (second call) [:headers "Accept"]))
+        "The GET Accept header is application/edn")
+
+    (done)))
+
+(deftest get-a-resource-with-edn
+  (async
+    done
+    (let [state (atom blank-state)
+          t (delay (assert-successful-get-with-edn state done))]
+      (with-redefs [http/get (mock-request state
+                                       {:status 200
+                                        :body "OK"})]
+        (let [returned (invoke-get "https://myapp.com/" state :encoding :edn)]
           (is (satisfies? Channel returned)
               "An async channel is returned")
           (a/go (let [final-result (a/<! returned)]
@@ -120,12 +155,6 @@
     (is (= "https://myapp.com/"
            (first c))
         "The URI is the 1st arg passed to cljs-http/get")
-    (is (= "application/json"
-           (get-in (second c) [:headers "Content-Type"]))
-        "The content-type header is application/json")
-    (is (= "application/json"
-           (get-in (second c) [:headers "Accept"]))
-        "The Accept header is application/json")
 
     (is (= 1 (:callback callbacks))
         "The :callback callback is invoked")
@@ -156,44 +185,98 @@
                 (deref t)))))))
 
 (defn- assert-successful-post
+  [calls callbacks]
+  (is (= 1 (count calls))
+      "cljs-http/post is called one time")
+  (is (= "https://myapp.com/things"
+         (ffirst calls))
+      "The URI is the 1st arg passed to cljs-http/post")
+
+  (is (= 1 (:callback callbacks))
+      "The :callback callback is invoked one time")
+
+  (let [[x :as xs] (:on-success callbacks)]
+    (is (= 1 (count xs))
+        "The :on-success callback is invoked once")
+    (is (= {:name "Albert"} x)
+        "The :on-success callback is invoked with the body of the response"))
+
+  (is (= 0 (count (:on-failure callbacks)))
+      "The :on-failure callback is not invoked"))
+
+(defn- assert-successful-post-with-json
   [state done]
   (let [{[c :as cs] :calls
          callbacks :callbacks} @state]
-    (is (= 1 (count cs))
-        "cljs-http/post is called one time")
-    (is (= "https://myapp.com/things"
-           (first c))
-        "The URI is the 1st arg passed to cljs-http/get")
+    (assert-successful-post cs callbacks)
+
     (is (= "application/json"
            (get-in (second c) [:headers "Content-Type"]))
-        "The content-type header is application/json")
+        "The POST content-type header is application/json")
     (is (= "application/json"
            (get-in (second c) [:headers "Accept"]))
-        "The Accept header is application/json")
-
-    (is (= 1 (:callback callbacks))
-        "The :callback callback is invoked")
-
-    (let [[x :as xs] (:on-success callbacks)]
-      (is (= 1 (count xs))
-          "The :on-success callback is invoked once")
-      (is (= {:name "Albert"} x) ; TODO: Do I really need to jump through these hoops here?
-          "The :on-success callback is invoked with the body of the response"))
-
-    (is (= 0 (count (:on-failure callbacks)))
-        "The :on-failure callback is not invoked")
+        "The POST Accept header is application/json")
 
     (done)))
 
-(deftest post-a-resource
+(deftest post-a-resource-with-default-content-type
   (async
     done
     (let [state (atom blank-state)
-          t (delay (assert-successful-post state done))]
+          t (delay (assert-successful-post-with-json state done))]
       (with-redefs [http/post (mock-request state
                                             {:status 200
                                              :body {:name "Albert"}})]
         (let [res (invoke-post "https://myapp.com/things" {:name "Albert"} state)]
+          (is (satisfies? Channel res)
+              "An async channel is returned")
+          (a/go (a/<! res)
+                (deref t)))))))
+
+(deftest post-a-resource-with-json
+  (async
+    done
+    (let [state (atom blank-state)
+          t (delay (assert-successful-post-with-json state done))]
+      (with-redefs [http/post (mock-request state
+                                            {:status 200
+                                             :body {:name "Albert"}})]
+        (let [res (invoke-post "https://myapp.com/things"
+                               {:name "Albert"}
+                               state
+                               :encoding :json)]
+          (is (satisfies? Channel res)
+              "An async channel is returned")
+          (a/go (a/<! res)
+                (deref t)))))))
+
+(defn- assert-successful-post-with-edn
+  [state done]
+  (let [{[c :as cs] :calls
+         callbacks :callbacks} @state]
+    (assert-successful-post cs callbacks)
+
+    (is (= "application/edn"
+           (get-in (second c) [:headers "Content-Type"]))
+        "The POST content-type header is application/edn")
+    (is (= "application/edn"
+           (get-in (second c) [:headers "Accept"]))
+        "The POST Accept header is application/edn")
+
+    (done)))
+
+(deftest post-a-resource-with-edn
+  (async
+    done
+    (let [state (atom blank-state)
+          t (delay (assert-successful-post-with-edn state done))]
+      (with-redefs [http/post (mock-request state
+                                            {:status 200
+                                             :body {:name "Albert"}})]
+        (let [res (invoke-post "https://myapp.com/things"
+                               {:user/name "Albert"}
+                               state
+                               :encoding :edn)]
           (is (satisfies? Channel res)
               "An async channel is returned")
           (a/go (a/<! res)
@@ -208,12 +291,6 @@
     (is (= "https://myapp.com/things"
            (first c))
         "The URI is the 1st arg passed to cljs-http/get")
-    (is (= "application/json"
-           (get-in (second c) [:headers "Content-Type"]))
-        "The content-type header is application/json")
-    (is (= "application/json"
-           (get-in (second c) [:headers "Accept"]))
-        "The Accept header is application/json")
 
     (is (= 1 (:callback callbacks))
         "The :callback callback is invoked")
@@ -252,12 +329,6 @@
     (is (= "https://myapp.com/things"
            (first c))
         "The URI is the 1st arg passed to cljs-http/get")
-    (is (= "application/json"
-           (get-in (second c) [:headers "Content-Type"]))
-        "The content-type header is application/json")
-    (is (= "application/json"
-           (get-in (second c) [:headers "Accept"]))
-        "The Accept header is application/json")
 
     (is (= 1 (:callback callbacks))
         "The :callback callback is invoked")

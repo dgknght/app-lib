@@ -7,10 +7,6 @@
 
 (defrecord Error [message data])
 
-(def default-opts
-  {:headers {"Content-Type" "application/json"
-             "Accept" "application/json"}})
-
 (def path og/path)
 
 (defn- singular?
@@ -27,7 +23,8 @@
     []))
 
 (def ^:private status-msgs
-  {404 "Not found"
+  {400 "Bad request"
+   404 "Not found"
    403 "Forbidden"
    401 "Unauthorized"
    422 "Unprocessable entity"
@@ -35,8 +32,8 @@
 
 (defn- extract-msg
   [{:keys [body status]}]
-  (or (:message body)
-      (:error body)
+  (or (:error body)
+      (:message body)
       (status-msgs status)
       "Unknown"))
 
@@ -44,9 +41,11 @@
   [{:keys [status] :as res}]
   (if (<= 200 status 299)
     res
-    (if (= 422 status)
-      (throw (ex-info "Unprocessable entity" (:body res)))
-      (throw (ex-info (extract-msg res) {})))))
+    (throw
+      (case status
+        400 (ex-info "Bad request" (:body res))
+        422 (ex-info "Unprocessable entity" (:body res))
+        (ex-info (extract-msg res) {})))))
 
 (defn- build-xf
   [{:keys [pre-xf post-xf]}]
@@ -81,11 +80,23 @@
         (on-failure res)
         (on-success res)))))
 
+(defn- resolve-encoding
+  [{:keys [encoding]
+    :or {encoding :json}}]
+  (let [type (name encoding)]
+    {:param-key (keyword (str type "-params"))
+     :content-type (str "application/" type)}))
+
 (defn- build-req
-  [opts]
-  (-> default-opts
-      (merge opts)
-      (update-in [:channel] #(or % (build-chan opts)))))
+  ([opts] (build-req nil opts))
+  ([resource opts]
+   (let [{:keys [param-key content-type]} (resolve-encoding opts)]
+     (cond-> (-> opts
+                 (dissoc :encoding)
+                 (update-in [:channel] #(or % (build-chan opts)))
+                 (assoc-in [:headers "Content-Type"] content-type)
+                 (assoc-in [:headers "Accept"] content-type))
+       resource (assoc param-key resource)))))
 
 (defn get
   ([uri] (get uri {}))
@@ -98,14 +109,14 @@
   ([uri resource] (post uri resource {}))
   ([uri resource opts]
    (wait-and-callback
-     (http/post uri (assoc (build-req opts) :json-params resource))
+     (http/post uri (build-req resource opts))
      opts)))
 
 (defn patch
   ([uri resource] (patch uri resource {}))
   ([uri resource opts]
    (wait-and-callback
-     (http/patch uri (assoc (build-req opts) :json-params resource))
+     (http/patch uri (build-req resource opts))
      opts)))
 
 (defn delete
