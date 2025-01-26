@@ -34,12 +34,19 @@
                         x)
                  ; NB: what we return here will be the final result
                  x)
-   :on-failure (fn [x]
+   :on-error (fn [e]
+               (swap! state
+                      update-in
+                      [:callbacks :on-error]
+                      conj
+                      e)
+               e) ; NB: returning the error here triggers on-failure instead of on-success
+   :on-failure (fn [e]
                  (swap! state
                         update-in
                         [:callbacks :on-failure]
                         conj
-                        x)
+                        e)
                  nil)
    :callback #(swap! state update-in [:callbacks :callback] inc)})
 
@@ -159,10 +166,10 @@
     (is (= 1 (:callback callbacks))
         "The :callback callback is invoked")
 
-    (let [[x :as xs] (:on-failure callbacks)]
-      (is (= 1 (count xs))
+    (let [[e :as es] (:on-failure callbacks)]
+      (is (= 1 (count es))
           "The :on-failure callback is invoked once")
-      (is (= "Not found" (:message x))
+      (is (= "Not found" (ex-message e))
           "The :on-failure callback is invoked with the body of the response"))
 
     (is (= 0 (count (:on-success callbacks)))
@@ -295,10 +302,10 @@
     (is (= 1 (:callback callbacks))
         "The :callback callback is invoked")
 
-    (let [[x :as xs] (:on-failure callbacks)]
-      (is (= 1 (count xs))
+    (let [[e :as es] (:on-failure callbacks)]
+      (is (= 1 (count es))
           "The :on-failure callback is invoked once")
-      (is (= "not found" (:message x))
+      (is (= "not found" (ex-message e))
           "The :on-failure callback is invoked with the message from the body"))
 
     (is (= 0 (count (:on-success callbacks)))
@@ -333,14 +340,14 @@
     (is (= 1 (:callback callbacks))
         "The :callback callback is invoked")
 
-    (let [[x :as xs] (:on-failure callbacks)]
-      (is (= 1 (count xs))
+    (let [[e :as es] (:on-failure callbacks)]
+      (is (= 1 (count es))
           "The :on-failure callback is invoked once")
       (is (= "Unprocessable entity"
-             (:message x))
+             (ex-message e))
           "The :on-failure callback is invoked with a message about the error")
-      (is (= {:name ["Name is already in use"]}
-             (:errors (:data x)))
+      (is (= {:errors {:name ["Name is already in use"]}}
+             (ex-data e))
           "The :on-failure callback is invoked with data from the body"))
 
     (is (= 0 (count (:on-success callbacks)))

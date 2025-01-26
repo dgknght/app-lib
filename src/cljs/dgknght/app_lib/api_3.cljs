@@ -5,8 +5,6 @@
             [cljs-http.client :as http]
             [dgknght.app-lib.api :as og]))
 
-(defrecord Error [message data])
-
 (def path og/path)
 
 (defn- singular?
@@ -55,16 +53,17 @@
                   (map #(or (:body %) %))]
                  (pluralize post-xf))))
 
-(defn- ex-handler
-  [{:keys [on-error]}]
-  (fn [e]
-    (if on-error
-      (on-error e)
-      (->Error (ex-message e) (ex-data e)))))
+(defn- log-and-return-error
+  [e]
+  (.error js/console "Unhanlded API error" e)
+  e)
 
 (defn- build-chan
-  [opts]
-  (a/chan 1 (build-xf opts) (ex-handler opts)))
+  [{:as opts :keys [on-error] :or {on-error log-and-return-error}}]
+  (a/chan 1 (build-xf opts) on-error))
+
+(def ^:private error?
+  (partial instance? js/Error))
 
 (defn- wait-and-callback
   [ch {:keys [on-success
@@ -76,7 +75,7 @@
   (a/go
     (let [res (a/<! ch)]
       (callback)
-      (if (instance? Error res)
+      (if (error? res)
         (on-failure res)
         (on-success res)))))
 
