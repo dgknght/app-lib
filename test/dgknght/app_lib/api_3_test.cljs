@@ -305,7 +305,7 @@
     (let [[e :as es] (:on-failure callbacks)]
       (is (= 1 (count es))
           "The :on-failure callback is invoked once")
-      (is (= "not found" (ex-message e))
+      (is (= "Not found" (ex-message e))
           "The :on-failure callback is invoked with the message from the body"))
 
     (is (= 0 (count (:on-success callbacks)))
