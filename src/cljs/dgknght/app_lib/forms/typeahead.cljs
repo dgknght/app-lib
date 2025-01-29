@@ -85,7 +85,8 @@
     :or {on-change identity
          caption-fn identity}}]
   (fn [index]
-    (let [item (lib/safe-nth @items index)]
+    (let [item (lib/safe-nth @items index)
+          txt @text-value]
       (reset! items nil)
       (if item
         (do
@@ -97,7 +98,9 @@
             (reset! text-value (value-fn item))
             (reset! text-value (caption-fn item)))
           (on-change item))
-        (when-not (= :direct mode)
+        (when (= :direct mode)
+          (when (and txt (> (count txt) 0))
+            (on-change txt))
           (swap! model assoc-in field nil)))
       (v/validate model field))))
 
