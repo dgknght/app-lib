@@ -64,6 +64,17 @@
                       #(assoc % :in-dropdown? true)))
            doall)]]))
 
+(defn- merge-attr
+  "Merge the given maps. If the values is sequential, combine them,
+  otherwise the later value wins."
+  [& ms]
+  (apply merge-with
+         (fn [v1 v2]
+           (if (sequential? v1)
+             (into v1 v2)
+             v2))
+         ms))
+
 (defmethod ^:private nav-item :default
   [{:keys [id label path tool-tip active? nav-fn badge-class badge toggle in-dropdown?]
     :or {path "#"}}]
@@ -72,13 +83,13 @@
   [:li {:class (when-not in-dropdown? "nav-item") }
    [:a.d-flex.align-items-center
     (cond-> {:href path
-             :class (if in-dropdown? "dropdown-item" "nav-link")}
+             :class [(if in-dropdown? "dropdown-item" "nav-link")]}
       tool-tip (assoc :title tool-tip)
       toggle (merge {:data-bs-toggle :collapse
                      :data-bs-target toggle})
       nav-fn (assoc :on-click nav-fn)
-      active? (assoc :class "active"
-                     :aria-current "page"))
+      active? (merge-attr {:class ["active"]
+                          :aria-current "page"}))
     (or label (title-case id))
     (when badge
       [:span.badge.ms-1 {:class badge-class} badge])]])
