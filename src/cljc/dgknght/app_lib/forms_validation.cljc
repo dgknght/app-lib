@@ -42,6 +42,12 @@
      (get-in (meta model)
              [::validation ::rules field]))))
 
+(defn reset
+  [model]
+  (if (lib/derefable? model)
+    (swap! model reset)
+    (vary-meta model dissoc ::validation)))
+
 (defn validated?
   ([model]
    (if (lib/derefable? model)
