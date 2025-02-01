@@ -34,3 +34,6 @@
        "1 + 6 / 2"      4M
        "1 + 2 * 3 + 4"  11M
        "3 * (2 + 1)"    9M))
+
+(deftest handle-unprocessable-expressions
+  (is (nil? (m/eval "-"))))

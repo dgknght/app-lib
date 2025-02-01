@@ -46,3 +46,6 @@
        "1 + 6 / 2"      "4.00"
        "1 + 2 * 3 + 4"  "11.00"
        "3 * (2 + 1)"    "9.00"))
+
+(deftest handle-unprocessable-expressions
+  (is (nil? (m/eval "-"))))

@@ -35,6 +35,9 @@
 (derive #?(:clj clojure.lang.MapEntry
            :cljs cljs.core/MapEntry)
         ::map-entry)
+(derive #?(:clj java.lang.String
+           :cljs js/String)
+        ::string)
 
 (defn format
   [msg & args]

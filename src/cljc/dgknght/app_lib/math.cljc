@@ -1,8 +1,10 @@
 (ns dgknght.app-lib.math
   (:refer-clojure :exclude [eval])
-  (:require [dgknght.app-lib.core :refer [conj-to-last]]
-            #?(:clj [clojure.core :as cc])
-            #?(:cljs [dgknght.app-lib.decimal :as decimal])))
+  (:require #?(:clj [clojure.core :as cc])
+            #?(:clj [clojure.pprint :refer [pprint]]
+               :cljs [cljs.pprint :refer [pprint]])
+            #?(:cljs [dgknght.app-lib.decimal :as decimal])
+            [dgknght.app-lib.core :as lib :refer [conj-to-last]]))
 
 (defn- nest-parens
   [elems]
@@ -100,16 +102,13 @@
 ; apply #{"+" "-"} to 1 + 6     => 7
 
 
-(defmulti eval*
-  #(cond
-     (vector? %) :vector
-     (string? %) :scalar))
+(defmulti eval* type)
 
 (defmethod eval* :default
   [elem]
   elem)
 
-(defmethod eval* :vector
+(defmethod eval* ::lib/vector
   [elems]
   (mdas elems))
 
@@ -118,9 +117,10 @@
   #?(:clj (bigdec v)
      :cljs (decimal/->decimal v)))
 
-(defmethod eval* :scalar
-  [elem]
-  (parse-decimal elem))
+(defmethod eval* ::lib/string
+  [s]
+  (when (re-find #"-?0?\.\d+|-?\d+(?:\.\d+)?" s)
+    (parse-decimal s)))
 
 (defn eval
   [input]
