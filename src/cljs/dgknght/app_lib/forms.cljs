@@ -352,7 +352,7 @@
   [date-string]
   (when
     (re-find #"^\d{1,2}/\d{1,2}/\d{4}$" date-string)
-    (tf/parse (tf/formatter "M/d/yyyy") date-string)))
+    (tf/parse-local-date (tf/formatter "M/d/yyyy") date-string)))
 
 (defn- days-between
   [& dates]
@@ -428,8 +428,6 @@
                                                       :down  [t/plus  (t/months 1)]
                                                       nil)]
                               (swap! model update-in field oper value))))
-           :unparse-fn unparse-date
-           :parse-fn parse-date
            :equals-fn #(when (and %1 %2) (t/equal? %1 %2))})]
        [:div.shadow.rounded {:class (when-not @visible? "d-none")
                              :style {:position :absolute
