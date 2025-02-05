@@ -1,63 +1,91 @@
 (ns dgknght.app-lib.test
   (:require [clojure.edn :as edn]
             [clojure.pprint :refer [pprint]]
+            [clojure.java.io :as io]
+            [clojure.string :as string]
+            [clojure.tools.logging :as log]
             [ring.util.response :as res]
             [cheshire.core :as json]
             [crouton.html :as html]
             [dgknght.app-lib.core :refer [safe-nth]]
             [dgknght.app-lib.validation])
-  (:import com.fasterxml.jackson.core.JsonParseException))
+  (:import com.fasterxml.jackson.core.JsonParseException
+           java.io.BufferedInputStream))
 
 (defn- content-type
   [res]
   (when-let [entry (res/find-header res "Content-Type")]
-    (val entry)))
+    (string/split (val entry) #"\s*;\s*")))
 
 (defn- not-json-content?
   [res]
-  (when-let [content-type (content-type res)]
-    (not= "application/json" content-type)))
+  (let [[ct] (content-type res)]
+    (and ct
+         (not= "application/json" ct))))
 
 (defn- not-edn-content?
   [res]
-  (when-let [content-type (content-type res)]
-    (not= "application/edn" content-type)))
+  (let [[ct] (content-type res)]
+    (and ct
+         (not= "application/edn" ct))))
+
+(defmulti ^:private ->string type)
+
+(defmethod ->string :default
+  [x]
+  (throw (ex-info "Unsupported type" {:type (type x)})))
+
+(defmethod ->string String [s] s)
+
+(defmethod ->string BufferedInputStream
+  [stream]
+  (-> stream
+      io/reader
+      slurp))
 
 (defn parse-html-body
-  [{:keys [body html-body] :as response}]
+  [{:keys [body html-body status] :as response}]
   {:pre [(map? response)]}
 
-  (if html-body
+  (if (or html-body
+          (= 204 status))
     response
-    (assoc response :html-body (html/parse-string body))))
+    (assoc response :html-body (some-> body
+                                       ->string
+                                       html/parse-string))))
 
 (defn parse-json-body
-  [{:keys [body json-body] :as response}]
-  {:pre [(map? response)
-         (or (= 204 (:status response))
-             (string? (:body response)))]}
+  [{:keys [body json-body status] :as response}]
+  {:pre [(map? response)]}
 
   (if (or json-body
+          (= 204 status)
           (not-json-content? response))
     response
-    (try
-      (assoc response :json-body (json/parse-string body true))
-      (catch JsonParseException e
-        (assoc response :json-body {:parse-error (.getMessage e)})))))
+    (assoc response
+           :json-body
+           (try
+             (some-> body
+                     ->string
+                     (json/parse-string true))
+             (catch JsonParseException e
+               {:parse-error (ex-message e)})))))
 
 (defn parse-edn-body
-  [{:as res :keys [edn-body body]}]
-  {:pre [(map? res)
-         (or (= 204 (:status res))
-             (string? (:body res)))]}
+  [{:as res :keys [edn-body body status]} & {:as opts}]
+  {:pre [(map? res)]}
 
   (if (or edn-body
+          (= 204 status)
           (not-edn-content? res))
     res
-    (try
-      (assoc res :edn-body (edn/read-string body))
-      (catch RuntimeException e
-        (assoc res :edn-body {:parse-error (.getMessage e)})))))
+    (assoc res
+           :edn-body
+           (try
+             (edn/read-string (or opts {})
+                              (->string body))
+             (catch Exception e
+               {:parse-error (ex-message e)})))))
 
 (defmacro with-mail-capture
   "Intercepts calls to postal.core/send-message and places them in an
