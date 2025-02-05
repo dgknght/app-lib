@@ -43,8 +43,7 @@
             {:body "{\"my-value\":\"is high\"}"}))
         "The parsed body is added at :json-body"))
   (testing "a no-content response"
-        (is (= {:status 204
-                :json-body nil}
+        (is (= {:status 204}
                (t/parse-json-body {:status 204}))
             "The map is returned unchanged"))
   (testing "invalid json"
@@ -68,8 +67,7 @@
             {:body "{:user/first-name \"John\"}"}))
         "The response is returned with the parsed body at :edn-body"))
   (testing "a no-content response"
-    (is (= {:status 204
-            :edn-body nil}
+    (is (= {:status 204}
            (t/parse-edn-body {:status 204}))))
   (testing "a json response"
     (let [res (-> (res/response "{\"firstName\":\"John\"}")
