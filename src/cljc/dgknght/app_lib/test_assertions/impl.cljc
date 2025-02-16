@@ -74,7 +74,8 @@
         :actual actual#
         :message (if same-count?#
                    ~msg
-                   (fmt "Expected %s items, but found %s"
+                   (fmt "%s: expected %s items, but found %s"
+                        ~msg
                         (count ~expected)
                         (count ~actual)))
         :type result#
