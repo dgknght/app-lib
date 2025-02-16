@@ -62,14 +62,21 @@
                         (interleave ~actual)
                         (partition 2)
                         (mapv #(apply prune-to %)))
-           result# (if (= ~expected actual#)
+           same-count?# (= (count ~actual)
+                           (count ~expected))
+           result# (if (and same-count?#
+                            (= ~expected actual#))
                      :pass
                      :fail)
            diffs# (when (= :fail result#)
                     (diff ~expected actual#))]
        {:expected ~expected
         :actual actual#
-        :message ~msg
+        :message (if same-count?#
+                   ~msg
+                   (fmt "Expected %s items, but found %s"
+                        (count ~expected)
+                        (count ~actual)))
         :type result#
         :diffs [[actual# (take 2 diffs#)]]})))
 
