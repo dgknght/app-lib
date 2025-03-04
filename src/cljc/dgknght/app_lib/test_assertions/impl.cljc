@@ -228,12 +228,20 @@
           :expected 302
           :actual (:status res#)}))))
 
+(def guess-the-body
+  (some-fn :edn-body
+           :json-body
+           :body))
+
 (defn assert-http-status
   [expected-status msg form]
   (let [response (safe-nth form 1)]
     `(let [status# (get-in ~response [:status])
            msg# (some #(get-in ~response %)
-                      [[:json-body :error]
+                      [[:edn-body :error]
+                       [:edn-body :dgknght.app-lib.validation/errors]
+                       [:edn-body :message]
+                       [:json-body :error]
                        [:json-body :message]
                        [:body :error]
                        [:body :message]
@@ -258,7 +266,7 @@
                     (:status ~response)
                     ~msg)
       :expected "20x"
-      :actual (fmt "%s: %s" (:status ~response) (:body ~response))}))
+      :actual (fmt "%s: %s" (:status ~response) (guess-the-body ~response))}))
 
 (defn comparable-uri
   [input]
