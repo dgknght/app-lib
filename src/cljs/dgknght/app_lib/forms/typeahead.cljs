@@ -85,24 +85,27 @@
     :or {on-change identity
          caption-fn identity}}]
   (fn [index]
-    (let [item (lib/safe-nth @items index)
-          txt @text-value]
-      (reset! items nil)
-      (if item
-        (do
-          (swap! model
-                 assoc-in
-                 field
-                 (value-fn item))
-          (if (= :direct mode)
-            (reset! text-value (value-fn item))
-            (reset! text-value (caption-fn item)))
-          (on-change item))
-        (when (= :direct mode)
-          (when (and txt (> (count txt) 0))
-            (on-change txt))
-          (swap! model assoc-in field nil)))
-      (v/validate model field))))
+    (if index
+      (let [item (lib/safe-nth @items index)
+            txt @text-value]
+        (reset! items nil)
+        (if item
+          (do
+            (swap! model
+                   assoc-in
+                   field
+                   (value-fn item))
+            (if (= :direct mode)
+              (reset! text-value (value-fn item))
+              (reset! text-value (caption-fn item)))
+            (on-change item))
+          (when (= :direct mode)
+            (when (and txt (> (count txt) 0))
+              (on-change txt))
+            (swap! model assoc-in field nil)))
+        (v/validate model field))
+      (when (= :direct mode)
+        (swap! model assoc-in field @text-value)))))
 
 (defn- on-key-down
   [{:keys [model
