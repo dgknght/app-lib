@@ -34,7 +34,7 @@
                           sort-key-fn]
                    :or {decorate-parent-fn identity
                         decorate-child-fn (fn [c _] c)
-                        sort-key-fn :identity
+                        sort-key-fn identity
                         id-fn :id
                         children-key :children}
                    :as opts}]
@@ -58,13 +58,15 @@
     :decorate-child-fn  - A function that receives a child and parent when the child is added to the parent
     :decorate-parent-fn - A function that receives each model that has children with the model as the first argument and the children as the second and returns the model."
   ([collection] (nest {} collection))
-  ([{:keys [parent-fn]
-     :or {parent-fn :parent-id}
+  ([{:keys [parent-fn sort-key-fn]
+     :or {parent-fn :parent-id
+          sort-key-fn identity}
      :as opts}
     collection]
    (let [by-parent (group-by parent-fn collection)]
      (->> collection
           (remove parent-fn)
+          (sort-by sort-key-fn)
           (mapv #(append-children % by-parent opts))))))
 
 (defn- unnest-item

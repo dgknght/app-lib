@@ -113,6 +113,7 @@
   (is (= nested-list
          (models/nest {:id-fn :id
                        :parent-fn :parent
+                       :sort-key-fn :name
                        :decorate-parent-fn (fn [group]
                                              (assoc group
                                                     :children-value
@@ -120,14 +121,14 @@
                                                          (mapcat (juxt :value :children-value))
                                                          (filter identity)
                                                          (reduce +))))}
-                      flat-list))
+                      (shuffle flat-list)))
       "The children are moved to the correct parent"))
 
 (deftest unnest-a-list
   (is (= unnested-list
          (models/unnest {:id-fn :id
-                            :path-segment-fn :name}
-                           nested-list))))
+                         :path-segment-fn :name}
+                        nested-list))))
 
 (deftest extract-a-nested-model
   (are [input expected] (= expected (models/extract-nested input :customer))
