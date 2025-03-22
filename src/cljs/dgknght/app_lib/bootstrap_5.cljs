@@ -329,6 +329,16 @@
                     expand-nav-item))
          doall) ]))
 
+(defn nav-vertical
+  ([items]
+   (nav-vertical {} items))
+  ([options items]
+   [:ul.nav.flex-column options
+    (->> items
+         (map (comp nav-item
+                    expand-nav-item))
+         doall)]))
+
 (defn pagination
   [& args]
   (apply bs-4/pagination args))
