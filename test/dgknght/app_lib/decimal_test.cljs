@@ -1,5 +1,5 @@
 (ns dgknght.app-lib.decimal-test
-  (:require [cljs.test :refer [deftest is are]]
+  (:require [cljs.test :refer [deftest is are testing]]
             [cljs.pprint :refer [pprint]]
             ["decimal.js" :as Decimal]
             [dgknght.app-lib.decimal :as d]))
@@ -91,3 +91,21 @@
        2 "0.67"
        1 "0.7"
        0 "1"))
+
+(deftest compare-two-values
+  (testing "less than"
+    (is (d/< (d/->decimal 1) (d/->decimal 2)))
+    (is (not (d/< (d/->decimal 1) (d/->decimal 1))))
+    (is (not (d/< (d/->decimal 2) (d/->decimal 1)))))
+  (testing "less than or equal to"
+    (is (d/<= (d/->decimal 1) (d/->decimal 2)))
+    (is (d/<= (d/->decimal 1) (d/->decimal 1)))
+    (is (not (d/<= (d/->decimal 2) (d/->decimal 1)))))
+  (testing "greater than"
+    (is (not (d/> (d/->decimal 1) (d/->decimal 2))))
+    (is (not (d/> (d/->decimal 1) (d/->decimal 1))))
+    (is (d/> (d/->decimal 2) (d/->decimal 1))))
+  (testing "greater than or equal to"
+    (is (d/>= (d/->decimal 1) (d/->decimal 1)))
+    (is (not (d/>= (d/->decimal 1) (d/->decimal 2))))
+    (is (d/>= (d/->decimal 2) (d/->decimal 1)))))
