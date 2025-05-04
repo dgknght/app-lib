@@ -1,5 +1,5 @@
 (ns dgknght.app-lib.decimal
-  (:refer-clojure :exclude [+ - * / zero? abs])
+  (:refer-clojure :exclude [+ - * / <= < >= > zero? abs])
   (:require ["decimal.js" :as Decimal]))
 
 (defn ->decimal
@@ -55,6 +55,22 @@
   [v1 v2]
   (when (and v1 v2)
     (.div (->decimal v1) v2)))
+
+(defn <
+  [v1 v2]
+  (.lessThan (->decimal v1) v2))
+
+(defn <=
+  [v1 v2]
+  (.lessThanOrEqualTo (->decimal v1) v2))
+
+(defn >
+  [v1 v2]
+  (.greaterThan (->decimal v1) v2))
+
+(defn >=
+  [v1 v2]
+  (.greaterThanOrEqualTo (->decimal v1) v2))
 
 (defn sum
   [coll]
