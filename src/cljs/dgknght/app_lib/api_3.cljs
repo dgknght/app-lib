@@ -71,23 +71,18 @@
         (on-failure res)
         (on-success res)))))
 
-(defn- resolve-encoding
+(defn- infer-param-key
   [{:keys [encoding]
     :or {encoding :json}}]
-  (let [type (name encoding)]
-    {:param-key (keyword (str type "-params"))
-     :content-type (str "application/" type)}))
+  (keyword (str (name encoding) "-params")))
 
 (defn- build-req
   ([opts] (build-req nil opts))
   ([resource opts]
-   (let [{:keys [param-key content-type]} (resolve-encoding opts)]
-     (cond-> (-> opts
-                 (dissoc :encoding)
-                 (update-in [:channel] #(or % (build-chan opts)))
-                 (assoc-in [:headers "Content-Type"] content-type)
-                 (assoc-in [:headers "Accept"] content-type))
-       resource (assoc param-key resource)))))
+   (cond-> (-> opts
+               (dissoc :encoding)
+               (update-in [:channel] #(or % (build-chan opts))))
+     resource (assoc (infer-param-key opts) resource))))
 
 (defn get
   ([uri] (get uri {}))
