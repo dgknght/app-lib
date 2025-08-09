@@ -97,9 +97,6 @@
     (assert-successful-get calls callbacks)
 
     (is (= "application/json"
-           (get-in (second call) [:headers "Content-Type"]))
-        "The GET content-type header is application/json")
-    (is (= "application/json"
            (get-in (second call) [:headers "Accept"]))
         "The GET Accept header is application/json")
 
@@ -111,8 +108,8 @@
     (let [state (atom blank-state)
           t (delay (assert-successful-get-with-json state done))]
       (with-redefs [http/get (mock-request state
-                                       {:status 200
-                                        :body "OK"})]
+                                           {:status 200
+                                            :body "OK"})]
         (let [returned (invoke-get "https://myapp.com/" state)]
           (is (satisfies? Channel returned)
               "An async channel is returned")
@@ -129,9 +126,6 @@
     (assert-successful-get calls callbacks)
 
     (is (= "application/edn"
-           (get-in (second call) [:headers "Content-Type"]))
-        "The GET content-type header is application/edn")
-    (is (= "application/edn"
            (get-in (second call) [:headers "Accept"]))
         "The GET Accept header is application/edn")
 
@@ -143,8 +137,8 @@
     (let [state (atom blank-state)
           t (delay (assert-successful-get-with-edn state done))]
       (with-redefs [http/get (mock-request state
-                                       {:status 200
-                                        :body "OK"})]
+                                           {:status 200
+                                            :body "OK"})]
         (let [returned (invoke-get "https://myapp.com/" state :encoding :edn)]
           (is (satisfies? Channel returned)
               "An async channel is returned")
@@ -218,9 +212,6 @@
     (assert-successful-post cs callbacks)
 
     (is (= "application/json"
-           (get-in (second c) [:headers "Content-Type"]))
-        "The POST content-type header is application/json")
-    (is (= "application/json"
            (get-in (second c) [:headers "Accept"]))
         "The POST Accept header is application/json")
 
@@ -263,9 +254,6 @@
          callbacks :callbacks} @state]
     (assert-successful-post cs callbacks)
 
-    (is (= "application/edn"
-           (get-in (second c) [:headers "Content-Type"]))
-        "The POST content-type header is application/edn")
     (is (= "application/edn"
            (get-in (second c) [:headers "Accept"]))
         "The POST Accept header is application/edn")
