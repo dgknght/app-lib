@@ -229,7 +229,8 @@
           :actual (:status res#)}))))
 
 (def guess-the-body
-  (some-fn :edn-body
+  (some-fn :parsed-body
+           :edn-body
            :json-body
            :body))
 
@@ -243,6 +244,9 @@
                        [:edn-body :message]
                        [:json-body :error]
                        [:json-body :message]
+                       [:parsed-body :error]
+                       [:parsed-body :message]
+                       [:parsed-body :dgknght.app-lib.validation/errors]
                        [:body :error]
                        [:body :message]
                        [:body]])]
@@ -259,7 +263,7 @@
 (defn http-success?
   [msg form]
   (let [response (safe-nth form 1)]
-    `{:type (if (< 199 (:status ~response) 300)
+    `{:type (if (<= 200 (:status ~response) 299)
               :pass
               :fail)
       :message (fmt "Expected an HTTP status code in the 200s, but found %s: %s"
