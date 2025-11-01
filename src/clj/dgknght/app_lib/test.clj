@@ -10,7 +10,7 @@
             [dgknght.app-lib.core :refer [safe-nth]]
             [dgknght.app-lib.validation])
   (:import com.fasterxml.jackson.core.JsonParseException
-           java.io.BufferedInputStream))
+           java.io.InputStream))
 
 (defn- content-type
   [res]
@@ -37,7 +37,7 @@
 
 (defmethod ->string String [s] s)
 
-(defmethod ->string BufferedInputStream
+(defmethod ->string InputStream
   [stream]
   (-> stream
       io/reader
@@ -72,15 +72,17 @@
                {:parse-error (ex-message e)})))))
 
 (defn parse-edn-body
-  [{:as res :keys [edn-body body status]} & {:as opts}]
+  [{:as res :keys [body status]} & {:as opts
+                                    :keys [target-key]
+                                    :or {target-key :edn-body}}]
   {:pre [(map? res)]}
 
-  (if (or edn-body
+  (if (or (res target-key)
           (= 204 status)
           (not-edn-content? res))
     res
     (assoc res
-           :edn-body
+           target-key
            (try
              (edn/read-string (or opts {})
                               (->string body))
