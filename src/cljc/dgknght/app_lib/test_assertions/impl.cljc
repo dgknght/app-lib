@@ -21,7 +21,7 @@
             [dgknght.app-lib.core :refer [update-in-if
                                           prune-to
                                           safe-nth]])
-  #?(:clj (:import java.io.StringWriter)))
+  #?(:clj (:import [java.io StringWriter InputStream])))
 
 #?(:cljs (def fmt goog.string/format)
    :clj (def fmt clojure.core/format))
@@ -228,28 +228,32 @@
           :expected 302
           :actual (:status res#)}))))
 
+(defn read-body
+  [body]
+  #?(:clj (if (isa? InputStream body)
+            (slurp body)
+            body)
+     :cljs body))
+
 (def guess-the-body
   (some-fn :parsed-body
            :edn-body
            :json-body
            :body))
 
+(def guess-the-error
+  (some-fn :error
+           :errors
+           :message
+           :dgknght.app-lib.validation/errors))
+
 (defn assert-http-status
   [expected-status msg form]
   (let [response (safe-nth form 1)]
     `(let [status# (get-in ~response [:status])
-           msg# (some #(get-in ~response %)
-                      [[:edn-body :error]
-                       [:edn-body :dgknght.app-lib.validation/errors]
-                       [:edn-body :message]
-                       [:json-body :error]
-                       [:json-body :message]
-                       [:parsed-body :error]
-                       [:parsed-body :message]
-                       [:parsed-body :dgknght.app-lib.validation/errors]
-                       [:body :error]
-                       [:body :message]
-                       [:body]])]
+           body# (guess-the-body (read-body ~response))
+           msg# (or (guess-the-error body#)
+                    body#)]
        {:type (if (= ~expected-status status#)
                 :pass
                 :fail)
