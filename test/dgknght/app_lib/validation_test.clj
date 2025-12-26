@@ -4,6 +4,7 @@
             [clojure.string :as string]
             [dgknght.app-lib.web :refer [email-pattern]]
             [dgknght.app-lib.test-assertions]
+            [dgknght.app-lib.validation-fixtures :as f]
             [dgknght.app-lib.validation :as v]))
 
 (def present? (every-pred string? seq))
@@ -191,3 +192,11 @@
           (is (= {::v/errors {:name ["Name is required"]}}
                  (ex-data e))
               "The exception contains the expected data"))))))
+
+(deftest specify-which-errors-to-extract
+  (is (= {:transaction/items
+          {0
+           {:transaction-item/quantity
+            ["Quantity must be a positive number"]}}}
+         (v/extract-errors f/complex-explain-data
+                           {:spec :bilateral}))))

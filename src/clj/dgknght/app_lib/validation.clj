@@ -101,6 +101,7 @@
                                   'clojure.core/decimal? "%s must be a number"
                                   'clojure.core/vector? "%s must be a list of values"
                                   'clojure.core/coll? "%s must be a list of values"
+                                  'clojure.core/pos? "%s must be a positive number"
                                   'decimal? "%s must be a number"
                                   'dgknght.app-lib.core/present? "%s is required"
                                   'dgknght.app-lib.validation/non-empty-string? "%s is required"
@@ -211,20 +212,59 @@
                       (fieldize (last path))
                       args))))
 
-(defn- ->errors
-  [{::s/keys [problems]}]
+(defn- uniquify
+  "Given a list of problems, discard duplicates based on path
+  and predicate.
+
+  When a spec uses s/or, it's possible for exactly the same predicate
+  to be applied to the same attribute multiple times. We only need
+  to tell the user about one of them"
+  [problems]
   (->> problems
-       (remove #(= ::s/nil ; this can cause problems with nested maps and I don't think it ever expresses meaningful information
-                   (last (:path %))))
-       (reduce append-error
-               {})))
+       (group-by #(cons (:pred %) (:path %)))
+       (map (comp first val))))
+
+(defn- match-spec
+  "Given a key like :bilateral, returns a function that returns
+  true for problem paths that contain the value and false for
+  non-empty problem paths that do not.
+
+  This is useful for limiting the amount of noise produced by
+  specs that use clojure.spec.alpha/or logic.
+
+  Note that we've made an assumption here that namespaced keywords
+  are attributes and non-namespaced keywords are 'or' branches. We
+  condsider the path to be empty if it contains no namespaced keywords."
+  [spec]
+  (if spec
+    (fn [{:keys [path]}]
+      (or (->> path
+               (remove #(namespace %))
+               empty?)
+          ((set path) spec)))
+    (constantly true)))
+
+(defn extract-errors
+  "Given the output from clojure.spec.alpha/explain-data, return
+  a list of user-friendly error messages."
+  ([data] (extract-errors data {}))
+  ([{::s/keys [problems]} {:keys [spec]}]
+   (->> problems
+        (remove #(= ::s/nil ; this can cause problems with nested maps and I don't think it ever expresses meaningful information
+                    (last (:path %))))
+        (filter (match-spec spec))
+        uniquify
+        (reduce append-error
+                {}))))
 
 (defn validate
   "Validates the specified model using the specified spec"
-  [model spec]
-  (if-let [result (s/explain-data spec model)]
-    (assoc model ::valid? false ::errors (->errors result))
-    (assoc model ::valid? true ::errors {})))
+  ([model spec]
+   (validate model spec {}))
+  ([model spec opts]
+   (if-let [result (s/explain-data spec model)]
+     (assoc model ::valid? false ::errors (extract-errors result opts))
+     (assoc model ::valid? true ::errors {}))))
 
 (defn has-error?
   "Returns true if the specified model contains validation errors"
