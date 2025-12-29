@@ -3,6 +3,7 @@
   (:require [clojure.core :as c]
             [clojure.spec.alpha :as s]
             [clojure.pprint :refer [pprint]]
+            [clojure.walk :refer [postwalk]]
             [dgknght.app-lib.web :refer [email-pattern] ]
             [dgknght.app-lib.inflection :refer [humanize
                                                 conjoin]])
@@ -206,7 +207,7 @@
   (let [[unwrapped args] (unwrap-partial pred)
         msg (pred-msg unwrapped)
         path (resolve-path in pred)]
-    (update-in errors path (fnil conj [])
+    (update-in errors path (fnil conj #{})
                (apply c/format
                       msg
                       (fieldize (last path))
@@ -244,6 +245,16 @@
           ((set path) spec)))
     (constantly true)))
 
+; We collect errors in sets to avoid duplication, then we turn
+; them into vectors to avoid breaking changes to the return value
+(defn- vectorize
+  [m]
+  (postwalk (fn [x]
+              (if (set? x)
+                (vec x)
+                x))
+            m))
+
 (defn extract-errors
   "Given the output from clojure.spec.alpha/explain-data, return
   a list of user-friendly error messages."
@@ -255,7 +266,8 @@
         (filter (match-spec spec))
         uniquify
         (reduce append-error
-                {}))))
+                {})
+        vectorize)))
 
 (defn validate
   "Validates the specified model using the specified spec"
