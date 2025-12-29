@@ -1,10 +1,10 @@
-(defproject com.github.dgknght/app-lib "0.3.40"
+(defproject com.github.dgknght/app-lib "0.3.41"
   :description "Library of commonly used functions for web app development"
   :url "https://github.com/dgknght/app-lib"
   :license {:name "EPL-2.0 OR GPL-2.0-or-later WITH Classpath-exception-2.0"
             :url "https://www.eclipse.org/legal/epl-2.0/"}
-  :dependencies [[org.clojure/clojure "1.10.1"]
-                 [org.clojure/clojurescript "1.10.758"]
+  :dependencies [[org.clojure/clojure "1.12.4"]
+                 [org.clojure/clojurescript "1.12.134"]
                  [org.clojure/core.async "1.3.610"]
                  [org.clojure/data.zip "0.1.3"]
                  [cheshire "5.8.1"]
