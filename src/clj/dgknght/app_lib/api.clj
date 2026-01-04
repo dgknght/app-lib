@@ -84,10 +84,12 @@
   internal-server-error)
 
 (defn wrap-api-exception
-  [handler]
+  [handler & {:keys [notify]
+              :or {notify identity}}]
   (fn [req]
     (try (handler req)
          (catch clojure.lang.ExceptionInfo e
+           (notify e)
            (if-let [errors (::v/errors (ex-data e))]
              (response {:errors errors} 422)
              (let [opaque? (auth/opaque? e)]
@@ -101,4 +103,5 @@
                  :else
                  forbidden))))
          (catch Exception e
+           (notify e)
            (error-response e)))))

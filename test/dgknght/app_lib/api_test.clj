@@ -1,5 +1,6 @@
 (ns dgknght.app-lib.api-test
   (:require [clojure.test :refer [deftest is testing]]
+            [clojure.pprint :refer [pprint]]
             [dgknght.app-lib.test :refer [with-log-capture]]
             [dgknght.app-lib.authorization :as auth]
             [dgknght.app-lib.test-assertions]
@@ -73,9 +74,12 @@
         "A request witn invalid Authorization is unauthorized")))
 
 (defn- throwing-handler
-  [ex]
-  (api/wrap-api-exception (fn [_req]
-                            (throw ex))))
+  [ex & {:as opts}]
+  (apply
+    api/wrap-api-exception
+    (fn [_req]
+      (throw ex))
+    (mapcat identity opts)))
 
 (deftest handle-request-errrors
   (testing "validation error"
@@ -125,4 +129,14 @@
         (is (= 403 (:status res))
             "The response indicates forbidden")
         (is (empty? @logged)
-            "Nothing is logged")))))
+            "Nothing is logged"))))
+  (testing "notifications"
+    (let [notifications (atom [])
+          h (throwing-handler (ex-info "induced error" {::auth/opaque? true})
+                              :notify #(swap! notifications conj %))
+          res (h {})]
+      (is (= 404 (:status res))
+          "The response indicates not found")
+      (is (= "induced error"
+             (ex-message (first @notifications)))
+          "The notification fn is invoked with the exception"))))
