@@ -306,8 +306,7 @@
                    errors
                    (update-in options [::forms/decoration] merge {::forms/target ::forms/text
                                                                   ::forms/presentation ::forms/element}))
-   (bs-4/decorate-typeahead-list list-elem)
-   [:div.invalid-feedback (v/validation-msg @model field)]])
+   (bs-4/decorate-typeahead-list list-elem)])
 
 (defn nav-tabs
   ([items]
