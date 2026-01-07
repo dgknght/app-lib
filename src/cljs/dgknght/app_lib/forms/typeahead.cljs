@@ -156,8 +156,7 @@
     (let [raw-value (-> e dom/target dom/value)]
       (reset! text-value raw-value)
       (when (= :direct mode)
-        (swap! model assoc-in field raw-value)
-        (v/validate model field))
+        (swap! model assoc-in field raw-value))
       (if (empty? raw-value)
         (reset! items nil)
         (search-fn raw-value #(->> %
@@ -228,7 +227,9 @@
       (do (reset! items nil)
           (if-let [v (get-in @model field)]
             (if (= :direct mode)
-              (on-blur @text-value)
+              (do
+                (v/validate model field)
+                (on-blur @text-value))
               (find-fn v (fn [r]
                            (reset! text-value (caption-fn r))
                            (on-blur r))))
