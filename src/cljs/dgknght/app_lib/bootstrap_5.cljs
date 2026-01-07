@@ -265,7 +265,7 @@
   (let [decorated (cond-> (add-class elem "form-control")
                     (v/valid? model) (add-class "is-valid")
                     (seq errors) (add-class "is-invalid"))
-        append (or append (when (seq errors) [:div.invalid-feedback (first errors)]))]
+        append (or append (when (seq errors) [:div.invalid-feedback errors]))]
     (if (or prepend append)
       [:div.input-group.mb-3 {:class (when (seq errors) "is-invalid")} ; adding is-invalid here triggers bootstraps invalid-feedback visbility
        prepend
@@ -306,8 +306,7 @@
                    errors
                    (update-in options [::forms/decoration] merge {::forms/target ::forms/text
                                                                   ::forms/presentation ::forms/element}))
-   (bs-4/decorate-typeahead-list list-elem)
-   [:div.invalid-feedback (v/validation-msg @model field)]])
+   (bs-4/decorate-typeahead-list list-elem)])
 
 (defn nav-tabs
   ([items]
