@@ -209,20 +209,23 @@
   [msg form]
   (let [target (safe-nth form 1)
         res (safe-nth form 2)]
-    `(let [res# ~res]
-       (assert (string? ~target) (str "The first agument must be a url. Found: " (prn-str ~target)))
+    `(let [res# ~res
+           location# (get-in res# [:headers "Location"])]
+       (assert (or (string? ~target) (instance? #?(:clj java.util.regex.Pattern :cljs js/RegExp) ~target))
+               (str "The first agument must be a url string or regular expression. Found: " (prn-str ~target)))
        (assert (map? res#) (str "The second argument must be a response map. Found: " (prn-str res#)))
        (if (= 302 (:status res#))
-         (if (= ~target
-                (get-in res# [:headers "Location"]))
+         (if (if (string? ~target)
+               (= ~target location#)
+               (re-find ~target location#))
            {:type :pass
             :message ~msg
             :expected ~target
-            :actual (get-in res# [:headers "Location"])}
+            :actual location#}
            {:type :fail
             :message (fmt "Expected response to redirect to %s, but it didn't" ~target)
             :expected ~target
-            :actual (get-in res# [:headers "Location"])})
+            :actual location#})
          {:type :fail
           :message "Expected response to be a redirect, but it wasn't"
           :expected 302

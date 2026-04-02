@@ -78,7 +78,12 @@
         "https://mysite.com/over-here"
         {:status 302
          :headers {"Location" "https://mysite.com/over-here"}})
-      "Status 302 is a redirect"))
+      "Status 302 is a redirect")
+  (is (http-redirect-to?
+        #"over-here$"
+        {:status 302
+         :headers {"Location" "https://mysite.com/over-here"}})
+      "A regular expression can be used to match the redirect location"))
 
 (deftest assert-an-http-response-indicates-bad-request
   (is (http-bad-request? {:status 400})
