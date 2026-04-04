@@ -1,5 +1,4 @@
 (ns dgknght.app-lib.api
-  (:refer-clojure :exclude [update])
   (:require [clojure.tools.logging :as log]
             [clojure.string :as string]
             [ring.util.response :as res]
@@ -80,7 +79,7 @@
  
 (defn- error-response
   [error]
-  (log/errorf error "Unexpected error handling request")
+  (log/error error "Unexpected error handling request")
   internal-server-error)
 
 (defn wrap-api-exception

@@ -1,5 +1,4 @@
 (ns dgknght.app-lib.dom
-  (:refer-clojure :exclude [comment])
   (:require [dgknght.app-lib.client-macros :refer-macros [with-retry]]
             [goog.object :as obj]))
 

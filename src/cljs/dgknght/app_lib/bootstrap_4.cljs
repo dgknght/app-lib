@@ -153,9 +153,10 @@
   [:li.dropdown-divider {:role "separator"}])
 
 (defmethod ^:private nav-item :dropdown
-  [{:keys [children id caption active? tool-tip]}]
+  [{:keys [children id caption active? tool-tip] :as item}]
   (when-not (seq children)
-    (throw "A dropdown nav item must have children"))
+    (throw (ex-info "A dropdown nav item must have children"
+                    {:nav-item item})))
 
   ^{:key (str "menu-item-" id)}
   [:li.nav-item.dropdown
