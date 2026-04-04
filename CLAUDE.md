@@ -118,4 +118,6 @@ This matters for any date/time or number formatting tests.
 
 - Write tests first
 - Fix any failing tests
-- Fix any linter errors
+- Fix any linter errors (For now allow deprecation warnings about
+  dgknght.app-lib.bootstrap-cons until we've removed all references from projects
+  that use this library.)
