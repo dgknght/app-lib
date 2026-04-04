@@ -37,6 +37,12 @@ lein doo once
 lein jar
 ```
 
+### Linting
+
+```bash
+clj-kondo --lint src:test
+```
+
 ## Architecture
 
 This is a Clojure/ClojureScript utility library (`com.github.dgknght/app-lib`)
@@ -107,3 +113,9 @@ macros used throughout.
 
 Tests run with UTC timezone and US locale (set in `project.clj` JVM options).
 This matters for any date/time or number formatting tests.
+
+## Guidelines
+
+- Write tests first
+- Fix any failing tests
+- Fix any linter errors
