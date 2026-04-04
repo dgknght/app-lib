@@ -20,7 +20,8 @@
             [dgknght.app-lib.models :as models]
             [dgknght.app-lib.core :refer [update-in-if
                                           prune-to
-                                          safe-nth]])
+                                          safe-nth
+                                          pattern?]])
   #?(:clj (:import [java.io StringWriter InputStream])))
 
 #?(:cljs (def fmt goog.string/format)
@@ -204,11 +205,6 @@
               (if pass?#
                 {:type :pass :message ~msg}
                 {:type :fail :message (report-msg ~msg "Didn't find the expected error message")})))))
-
-(defn- pattern?
-  [x]
-  #?(:clj (instance? java.util.regex.Pattern x)
-     :cljs (instance? js/RegExp x)))
 
 (defn http-redirect-to?
   [msg form]
