@@ -1,7 +1,9 @@
 (ns dgknght.app-lib.core-test
-  (:require [cljs.test :refer-macros [deftest testing are is]]
-            [dgknght.app-lib.decimal :refer [->decimal]]
-            [dgknght.app-lib.core :as lib]))
+  (:require #?(:clj  [clojure.test :refer [deftest is are testing]]
+               :cljs [cljs.test :refer-macros [deftest testing are is]])
+            #?(:cljs [dgknght.app-lib.decimal :refer [->decimal]])
+            [dgknght.app-lib.core :as lib])
+  #?(:clj (:import java.util.UUID)))
 
 (deftest parse-a-boolean
   (are [input expected] (= expected (lib/parse-bool input))
@@ -22,7 +24,9 @@
        nil     nil
        ""      nil
        "1,000" 1000
-       123     123))
+       123     123)
+  #?(:clj (is (thrown? NumberFormatException
+                       (lib/parse-int "notanumber")))))
 
 (deftest parse-a-floating-point-number
   (are [input expected] (= expected (lib/parse-float input))
@@ -34,9 +38,9 @@
 
 (deftest parse-a-decimal
   (are [in e] (= e (lib/parse-decimal in))
-       "10"         (->decimal 10)
-       "10.1"       (->decimal 10.1)
-       "-10.1"      (->decimal -10.1)
+       "10"         #?(:clj 10M   :cljs (->decimal 10))
+       "10.1"       #?(:clj 10.1M :cljs (->decimal 10.1))
+       "-10.1"      #?(:clj -10.1M :cljs (->decimal -10.1))
        ""           nil
        "notanumber" nil))
 
@@ -97,6 +101,17 @@
                                   :reconciled true}
                                  {:description "test"}]]
                            :reconciled))))
+
+#?(:clj
+   (deftest get-a-uuid
+     (let [str-id "10000000-0000-0000-0000-000000000000"
+           id (UUID/fromString str-id)]
+       (is (= id (lib/uuid str-id))
+           "A string is parsed into a uuid")
+       (is (= id (lib/uuid id))
+           "A UUID is returned as-is")
+       (is (instance? UUID (lib/uuid))
+           "With no args, a new UUID is returned"))))
 
 (deftest check-for-the-presence-of-a-value
   (is (not (lib/present? nil)))
@@ -220,13 +235,12 @@
       "The missing attribute is created"))
 
 (deftest decrement-a-value-to-a-minumum
-  (let [f (lib/fmin dec 1)]
+  (let [f (lib/fmin dec 0)]
     (are [input expected] (= expected (f input))
-          3 2
-          2 1
-          1 1
-          0 1
-         -1 1)))
+         2 1
+         1 0
+         0 0
+         -1 0)))
 
 (deftest increment-a-value-to-a-maximum
   (let [f (lib/fmax inc 2)]

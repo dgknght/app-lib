@@ -1,8 +1,11 @@
 (ns dgknght.app-lib.web-test
-  (:require [cljs.test :refer [deftest is are]]
-            [cljs-time.core :as t]
-            [cljs-time.format :as tf]
-            [dgknght.app-lib.time :as tm]
+  (:require #?(:clj  [clojure.test :refer [deftest is are]]
+               :cljs [cljs.test :refer [deftest is are]])
+            #?(:clj  [clj-time.core :as t]
+               :cljs [cljs-time.core :as t])
+            #?(:clj  [clj-time.format :as tf]
+               :cljs [cljs-time.format :as tf])
+            #?(:cljs [dgknght.app-lib.time :as tm])
             [dgknght.app-lib.web :as web]))
 
 (deftest build-a-path
@@ -22,10 +25,13 @@
                (web/unserialize-date "2019-03-02"))
       "A well-formatted string can be converted into a date")
   (is (.equals (t/local-date 2020 3 2)
-               (t/do-at*
-                 (t/date-time 2020 3 1 12 30)
-                 (fn []
-                   (web/unserialize-date "tomorrow"))))
+               #?(:clj  (t/do-at
+                           (t/date-time 2020 3 1 12 30)
+                           (web/unserialize-date "tomorrow"))
+                  :cljs (t/do-at*
+                           (t/date-time 2020 3 1 12 30)
+                           (fn []
+                             (web/unserialize-date "tomorrow")))))
       "A relative date can be specified")
   (is (.equals (t/local-date 2019 3 2)
                (web/unserialize-date (t/local-date 2019 3 2)))
@@ -36,9 +42,13 @@
          (web/serialize-date-time (t/date-time 2019 3 2 12 34 56)))))
 
 (deftest unserialize-a-date-time
-  (let [expected (t/date-time 2019 3 2 12 34 56)
-        actual (web/unserialize-date-time "2019-03-02T12:34:56Z")]
-  (is (.equals expected actual))))
+  #?(:clj
+     (is (= (t/date-time 2019 3 2 12 34 56)
+            (web/unserialize-date-time "2019-03-02T12:34:56Z")))
+     :cljs
+     (let [expected (t/date-time 2019 3 2 12 34 56)
+           actual (web/unserialize-date-time "2019-03-02T12:34:56Z")]
+       (is (.equals expected actual)))))
 
 (deftest format-a-date
   (let [date (t/local-date 2019 3 2)]
@@ -56,11 +66,15 @@
   (is (nil? (web/unformat-date "notadate"))))
 
 (deftest format-a-date-time
-  (is (= "3/2/2019 12:34 pm" (web/format-date-time (t/date-time 2019 3 2 12 34 56))))
+  (is (= #?(:clj "3/2/2019 12:34 PM" :cljs "3/2/2019 12:34 pm")
+         (web/format-date-time (t/date-time 2019 3 2 12 34 56))))
+  #?(:clj
+     (is (= "2019-03-02"
+            (web/format-date-time (t/date-time 2019 3 2 12 34 56) :date))))
   (is (= nil (web/format-date-time nil))))
 
 (deftest reformat-a-date-time
-  (is (= "3/2/2020 1:00 am"
+  (is (= #?(:clj "3/2/2020 1:00 AM" :cljs "3/2/2020 1:00 am")
          (web/reformat-date-time "2020-03-02T01:00:00Z"))))
 
 (deftest format-a-decimal
@@ -75,16 +89,23 @@
 
 (deftest serialize-a-time
   (is (= "12:30:00"
-         (web/serialize-time (tm/time 12 30)))))
+         (web/serialize-time #?(:clj  (t/local-time 12 30)
+                                :cljs (tm/time 12 30))))))
 
 (deftest unserialize-a-time
-  (is (= (tm/time 12 30 15)
+  (is (= #?(:clj  (t/local-time 12 30 15)
+             :cljs (tm/time 12 30 15))
          (web/unserialize-time "12:30:15"))))
 
 (deftest format-a-time
-  (is (= "12:30 PM"
-         (web/format-time (tm/time 12 30 15)))))
+  (is (= #?(:clj "12:30" :cljs "12:30 PM")
+         (web/format-time #?(:clj  (t/local-time 12 30 15)
+                             :cljs (tm/time 12 30 15))))))
 
 (deftest unformat-a-time
-  (is (tm/equals (tm/time 12 30)
-                 (web/unformat-time "12:30 PM"))))
+  #?(:clj
+     (is (.equals (t/local-time 12 30)
+                  (web/unformat-time "12:30")))
+     :cljs
+     (is (tm/equals (tm/time 12 30)
+                    (web/unformat-time "12:30 PM")))))

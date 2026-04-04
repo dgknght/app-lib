@@ -1,7 +1,9 @@
 {
   "permissions": {
     "allow": [
-      "Bash(lein test:*)"
+      "Bash(clj-kondo:*)",
+      "Bash(lein test:*)",
+      "Bash(lein doo:*)"
     ]
   }
 }
