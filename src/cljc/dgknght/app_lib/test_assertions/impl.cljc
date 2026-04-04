@@ -205,13 +205,18 @@
                 {:type :pass :message ~msg}
                 {:type :fail :message (report-msg ~msg "Didn't find the expected error message")})))))
 
+(defn- pattern?
+  [x]
+  #?(:clj (instance? java.util.regex.Pattern x)
+     :cljs (instance? js/RegExp x)))
+
 (defn http-redirect-to?
   [msg form]
   (let [target (safe-nth form 1)
         res (safe-nth form 2)]
     `(let [res# ~res
            location# (get-in res# [:headers "Location"])]
-       (assert (or (string? ~target) (instance? #?(:clj java.util.regex.Pattern :cljs js/RegExp) ~target))
+       (assert ((some-fn string? pattern?) ~target)
                (str "The first agument must be a url string or regular expression. Found: " (prn-str ~target)))
        (assert (map? res#) (str "The second argument must be a response map. Found: " (prn-str res#)))
        (if (= 302 (:status res#))
