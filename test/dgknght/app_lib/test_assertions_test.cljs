@@ -1,5 +1,5 @@
 (ns dgknght.app-lib.test-assertions-test
-  (:require [cljs.test :refer [deftest is]]
+  (:require [cljs.test :refer [deftest is testing]]
             [cljs-time.core :as t]
             [dgknght.app-lib.test-assertions]))
 
@@ -86,16 +86,17 @@
       "Status 204 is no content"))
 
 (deftest assert-an-http-response-is-a-redirect
-  (is (dgknght.app-lib.test-assertions/http-redirect-to?
-        "https://mysite.com/over-here"
-        {:status 302
-         :headers {"Location" "https://mysite.com/over-here"}})
-      "Status 302 is a redirect")
-  (is (dgknght.app-lib.test-assertions/http-redirect-to?
-        #"over-here$"
-        {:status 302
-         :headers {"Location" "https://mysite.com/over-here"}})
-      "A regular expression can be used to match the redirect location"))
+  (testing "an exact match"
+    (is (dgknght.app-lib.test-assertions/http-redirect-to?
+          "https://mysite.com/over-here"
+          {:status 302
+           :headers {"Location" "https://mysite.com/over-here"}})
+        "Status 302 is a redirect"))
+  (testing "a pattern match"
+    (is (dgknght.app-lib.test-assertions/http-redirect-to?
+          #"over-here$"
+          {:status 302
+           :headers {"Location" "https://mysite.com/over-here"}}))))
 
 (deftest assert-an-http-response-indicates-bad-request
   (is (dgknght.app-lib.test-assertions/http-bad-request?
