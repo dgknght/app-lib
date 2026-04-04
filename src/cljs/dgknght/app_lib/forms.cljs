@@ -495,7 +495,7 @@
 
 (defmethod ^:private select-option :simple
   [item field]
-  ^{:key (str "option-" field "-" (str item))}
+  ^{:key (str "option-" field "-" item)}
   [:option {:value (str item)} (str item)])
 
 (defmethod ^:private select-option :compound

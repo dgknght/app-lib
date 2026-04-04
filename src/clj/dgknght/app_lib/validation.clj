@@ -1,5 +1,4 @@
 (ns dgknght.app-lib.validation
-  (:refer-clojure :exclude [format])
   (:require [clojure.core :as c]
             [clojure.spec.alpha :as s]
             [clojure.pprint :refer [pprint]]

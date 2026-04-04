@@ -1,12 +1,9 @@
 (ns dgknght.app-lib.decimal-test
   (:require [cljs.test :refer [deftest is are testing]]
             [cljs.pprint :refer [pprint]]
-            ["decimal.js" :as Decimal]
             [dgknght.app-lib.decimal :as d]))
 
 (deftest parse-a-decimal
-  #_(is (instance? Decimal (d/->decimal "1.5"))
-      "It returns an instance of Decimal")
   (is (= (d/->decimal "1.5") 1.5)
       "It returns the parsed value"))
 
