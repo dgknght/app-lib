@@ -257,3 +257,7 @@
          (lib/dissoc-in {:one 1
                          :two 2}
                         [:two]))))
+
+(deftest identify-a-regex-pattern
+  (is (lib/pattern? #"^pattern$"))
+  (is (not (lib/pattern? "not a pattern"))))

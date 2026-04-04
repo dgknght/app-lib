@@ -295,3 +295,8 @@
   (if (empty? ks)
     (dissoc m k)
     (update-in m [k] dissoc-in ks)))
+
+(defn pattern?
+  [x]
+  #?(:clj (instance? java.util.regex.Pattern x)
+     :cljs (instance? js/RegExp x)))

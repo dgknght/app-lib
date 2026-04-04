@@ -117,6 +117,7 @@ This matters for any date/time or number formatting tests.
 ## Guidelines
 
 - Write tests first
+  - Focus on behavior, not implementation
 - Fix any failing tests
 - Fix any linter errors (For now allow deprecation warnings about
   dgknght.app-lib.bootstrap-cons until we've removed all references from projects
