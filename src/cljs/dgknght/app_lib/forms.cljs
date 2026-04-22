@@ -295,7 +295,9 @@
                        on-accept
                        validations
                        errors
-                       html]
+                       html
+                       min
+                       max]
                 :or {input-type :text
                      equals-fn =
                      disabled-fn (constantly false)
@@ -315,6 +317,9 @@
     (fn []
       (let [attr (merge {:id (->id field)}
                         html
+                        (cond-> {}
+                          min (assoc :min min)
+                          max (assoc :max max))
                         {:type input-type
                          :auto-complete :off
                          :disabled (disabled-fn)
