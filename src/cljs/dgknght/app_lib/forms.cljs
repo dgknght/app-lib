@@ -453,9 +453,16 @@
     (js/parseInt text-value)))
 
 (defn integer-input
-  [model field options]
-  (specialized-text-input model field (merge options {:type :number
-                                                      :parse-fn parse-int})))
+  [model field {:keys [min max] :as options}]
+  (specialized-text-input
+    model field
+    (merge options
+           {:type :number
+            :parse-fn (fn [v]
+                        (when-let [n (parse-int v)]
+                          (cond-> n
+                            min (clojure.core/max min)
+                            max (clojure.core/min max))))})))
 
 (defn integer-field
   [model field options]
