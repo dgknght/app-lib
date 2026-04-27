@@ -284,6 +284,12 @@
   #?(:clj (instance? IDeref v)
      :cljs (satisfies? IDeref v)))
 
+(defn safe-deref
+  [v]
+  (if (derefable? v)
+    @v
+    v))
+
 (defn one?
   [coll]
   {:pre [(sequential? coll)]}

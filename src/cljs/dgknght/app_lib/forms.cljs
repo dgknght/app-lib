@@ -316,10 +316,9 @@
                      (reset! text-value (unparse-fn a))))))
     (fn []
       (let [attr (merge {:id (->id field)}
-                        html
-                        (cond-> {}
-                          min (assoc :min min)
-                          max (assoc :max max))
+                        (cond-> html
+                          min (assoc :min (lib/safe-deref min))
+                          max (assoc :max (lib/safe-deref max)))
                         {:type input-type
                          :auto-complete :off
                          :disabled (disabled-fn)
@@ -458,16 +457,12 @@
     (js/parseInt text-value)))
 
 (defn integer-input
-  [model field {:keys [min max] :as options}]
+  [model field options]
   (specialized-text-input
     model field
     (merge options
            {:type :number
-            :parse-fn (fn [v]
-                        (when-let [n (parse-int v)]
-                          (cond-> n
-                            min (clojure.core/max min)
-                            max (clojure.core/min max))))})))
+            :parse-fn parse-int})))
 
 (defn integer-field
   [model field options]
