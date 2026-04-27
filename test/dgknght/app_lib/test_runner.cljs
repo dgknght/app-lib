@@ -5,6 +5,7 @@
             dgknght.app-lib.web-mocks-test
             dgknght.app-lib.api-async-test
             dgknght.app-lib.api-3-test
+            dgknght.app-lib.forms-test
             dgknght.app-lib.forms-validation-test
             dgknght.app-lib.test-test
             dgknght.app-lib.core-test
@@ -17,7 +18,8 @@
             dgknght.app-lib.notifications-test
             dgknght.app-lib.busy-test))
 
-(doo-tests 'dgknght.app-lib.inflection-test
+(doo-tests 'dgknght.app-lib.forms-test
+           'dgknght.app-lib.inflection-test
            'dgknght.app-lib.test-assertions-test
            'dgknght.app-lib.web-mocks-test
            'dgknght.app-lib.forms-validation-test

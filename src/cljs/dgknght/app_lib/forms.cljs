@@ -295,7 +295,9 @@
                        on-accept
                        validations
                        errors
-                       html]
+                       html
+                       min
+                       max]
                 :or {input-type :text
                      equals-fn =
                      disabled-fn (constantly false)
@@ -314,7 +316,9 @@
                      (reset! text-value (unparse-fn a))))))
     (fn []
       (let [attr (merge {:id (->id field)}
-                        html
+                        (cond-> html
+                          min (assoc :min (lib/safe-deref min))
+                          max (assoc :max (lib/safe-deref max)))
                         {:type input-type
                          :auto-complete :off
                          :disabled (disabled-fn)
@@ -454,8 +458,11 @@
 
 (defn integer-input
   [model field options]
-  (specialized-text-input model field (merge options {:type :number
-                                                      :parse-fn parse-int})))
+  (specialized-text-input
+    model field
+    (merge options
+           {:type :number
+            :parse-fn parse-int})))
 
 (defn integer-field
   [model field options]
