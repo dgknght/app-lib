@@ -47,7 +47,7 @@
 
 (defn- log-and-return-error
   [e]
-  (.error js/console "Unhanlded API error" e)
+  (.error js/console "Unhandled API error" e)
   e)
 
 (defn- build-chan
@@ -101,6 +101,13 @@
   ([uri resource opts]
    (wait-and-callback
      (http/post uri (build-req resource opts))
+     opts)))
+
+(defn put
+  ([uri resource] (put uri resource {}))
+  ([uri resource opts]
+   (wait-and-callback
+     (http/put uri (build-req resource opts))
      opts)))
 
 (defn patch
