@@ -103,6 +103,13 @@
      (http/post uri (build-req resource opts))
      opts)))
 
+(defn put
+  ([uri resource] (put uri resource {}))
+  ([uri resource opts]
+   (wait-and-callback
+     (http/put uri (build-req resource opts))
+     opts)))
+
 (defn patch
   ([uri resource] (patch uri resource {}))
   ([uri resource opts]
