@@ -47,7 +47,7 @@
 
 (defn- log-and-return-error
   [e]
-  (.error js/console "Unhanlded API error" e)
+  (.error js/console "Unhandled API error" e)
   e)
 
 (defn- build-chan
