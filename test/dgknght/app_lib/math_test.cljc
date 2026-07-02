@@ -1,7 +1,7 @@
 (ns dgknght.app-lib.math-test
   (:require #?(:clj  [clojure.test :refer [deftest is are]]
                :cljs [cljs.test :refer-macros [deftest is are]])
-            #?(:cljs [dgknght.app-lib.decimal])
+            #?(:cljs [dgknght.app-lib.decimal :as d])
             [dgknght.app-lib.math :as m])
   #?(:cljs (:import goog.i18n.NumberFormat)))
 
@@ -25,8 +25,10 @@
           "-.05"   -0.05M
           "-0.05"  -0.05M)
      :cljs
-     (are [in e] (= (format-number e)
-                    (format-number (m/eval in)))
+     (are [in e] (let [res (m/eval in)]
+                   (and (d/decimal? res)
+                        (= (format-number e)
+                           (format-number res))))
           "1"       "1.00"
           "1.05"    "1.05"
           " 1.05"   "1.05"
