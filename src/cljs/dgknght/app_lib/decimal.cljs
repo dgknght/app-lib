@@ -18,7 +18,11 @@
                       (when other
                         (->decimal other))
                       (catch js/Error _ nil))]
-      (.equals this parsed))))
+      (.equals this parsed)))
+
+  IPrintWithWriter
+  (-pr-writer [d writer _opts]
+    (write-all writer "#dgknght.app-lib/decimal \"" (.toString d) "\"")))
 
 (defn abs
   [value]
