@@ -55,6 +55,7 @@
     :id-fn              - A key or fn that extracts the id from each model. Defaults to :id.
     :parent-fn          - A key or fn that extracts the parent id from each model. Defaults to :parent-id.
     :sort-key-fn        - A fn that extracts the sort value for each model.
+    :children-key       - The key used to store children in each parent model. Defaults to :children.
     :decorate-child-fn  - A function that receives a child and parent when the child is added to the parent
     :decorate-parent-fn - A function that receives each model that has children with the model as the first argument and the children as the second and returns the model."
   ([collection] (nest {} collection))
@@ -100,7 +101,15 @@
                     (children-key item)))))
 
 (defn unnest
-  "Given a nested collection, return a flattened list"
+  "Given a nested collection, return a flattened list.
+
+  options:
+    :id-fn           - A key or fn that extracts the id from each model. Defaults to :id.
+    :path-segment-fn - A key or fn that extracts the path segment label from each model. Defaults to :name.
+    :children-key    - The key used to look up children in each model. Defaults to :children.
+    :parent-ids-key  - The key used to store the ancestor id list on each flattened item. Defaults to :parent-ids.
+    :child-count-key - The key used to store the number of children on each flattened item. Defaults to :child-count.
+    :path-key        - The key used to store the path vector on each flattened item. Defaults to :path."
   ([collection] (unnest {} collection))
   ([options collection]
    (mapcat #(unnest-item % (merge {:id-fn :id
