@@ -86,6 +86,8 @@
                      :once
                      calls
                      {"content-type" "application/json"}))
+               (is (called? :once calls #"mysite")
+                     "The unqualified form can also be used")
              (done))
            (http/get "https://mysite.com" {:channel ch
                                            :headers {"content-type" "application/json"}

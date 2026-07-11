@@ -12,7 +12,11 @@
                  {:one 1}
                  {:one 1
                   :id 100}))
-      "Attributes with the same key are compared, extra attributes are ignored."))
+      "Attributes with the same key are compared, extra attributes are ignored.")
+  (is (comparable? {:one 1}
+                    {:one 1
+                     :id 100})
+      "The unqualified form can also be used"))
 
 (deftest assert-seq-of-similar-maps
   (is #?(:clj  (seq-of-maps-like? [{:one 1}
