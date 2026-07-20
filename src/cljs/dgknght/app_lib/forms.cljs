@@ -9,6 +9,7 @@
             [dgknght.app-lib.web :refer [format-time
                                          unformat-time]]
             [dgknght.app-lib.math :as math]
+            [dgknght.app-lib.decimal :as decimal]
             [dgknght.app-lib.inflection :refer [humanize]]
             [dgknght.app-lib.dom :as dom]
             [dgknght.app-lib.bootstrap-icons :as icons]
@@ -478,9 +479,18 @@
   (float-input model field (assoc-in options [::decoration ::presentation] ::field)))
 
 (defn decimal-input
-  [model field options]
+  "Renders a decimal input that also supports simple arithmetic (e.g. entering
+  \"9.99 * 1.0825\" evaluates to 10.814175).
+
+  options:
+    fraction-digits - when supplied, the evaluated result is rounded to this
+                       many decimal places (e.g. 2 for currency amounts)."
+  [model field {:keys [fraction-digits] :as options}]
   (specialized-text-input model field (merge options {:type :text
-                                                      :parse-fn math/eval})))
+                                                      :parse-fn (if fraction-digits
+                                                                  (comp #(some-> % (decimal/set-scale fraction-digits))
+                                                                        math/eval)
+                                                                  math/eval)})))
 
 (defn decimal-field
   ([model field] (decimal-field model field {}))
