@@ -130,6 +130,20 @@
                          :path-segment-fn :name}
                         nested-list))))
 
+(deftest nest-a-list-with-a-parent-outside-the-collection
+  (is (= [{:id 6
+           :name "Group 1.2.1"
+           :value 10M
+           :parent 3}]
+         (models/nest {:id-fn :id
+                       :parent-fn :parent
+                       :sort-key-fn :name}
+                      [{:id 6
+                        :name "Group 1.2.1"
+                        :value 10M
+                        :parent 3}]))
+      "An item whose parent is not present in the collection is treated as a root instead of being dropped"))
+
 (deftest extract-a-nested-model
   (are [input expected] (= expected (models/extract-nested input :customer))
        {:id 1
