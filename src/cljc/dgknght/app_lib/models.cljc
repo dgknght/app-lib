@@ -50,7 +50,12 @@
 (defn nest
   "Given a collection of maps with recursive references, returns the same list with
   children assigned to their parents.
-  
+
+  If an item's parent-fn value does not match the id-fn value of any item in the
+  collection (e.g. the collection is a subset of a larger tree and the item's
+  actual parent was not included), the item is treated as a root instead of
+  being silently dropped.
+
   options:
     :id-fn              - A key or fn that extracts the id from each model. Defaults to :id.
     :parent-fn          - A key or fn that extracts the parent id from each model. Defaults to :parent-id.
@@ -59,14 +64,17 @@
     :decorate-child-fn  - A function that receives a child and parent when the child is added to the parent
     :decorate-parent-fn - A function that receives each model that has children with the model as the first argument and the children as the second and returns the model."
   ([collection] (nest {} collection))
-  ([{:keys [parent-fn sort-key-fn]
-     :or {parent-fn :parent-id
+  ([{:keys [id-fn parent-fn sort-key-fn]
+     :or {id-fn :id
+          parent-fn :parent-id
           sort-key-fn identity}
      :as opts}
     collection]
-   (let [by-parent (group-by parent-fn collection)]
+   (let [by-parent (group-by parent-fn collection)
+         known-ids (into #{} (map id-fn) collection)
+         root? #(-> % parent-fn known-ids not)]
      (->> collection
-          (remove parent-fn)
+          (filter root?)
           (sort-by sort-key-fn)
           (mapv #(append-children % by-parent opts))))))
 
