@@ -122,8 +122,40 @@
   (when (re-find #"-?0?\.\d+|-?\d+(?:\.\d+)?" s)
     (parse-decimal s)))
 
+(defn- operand-token?
+  "True if t represents a completed value (a number or a closing paren)
+  rather than an operator or an opening paren"
+  [t]
+  (not (contains? #{"(" "+" "-" "*" "/"} t)))
+
+(defn- negative-number-token?
+  [t]
+  (re-matches #"-.+" t))
+
+(defn- split-leading-minus
+  [t]
+  ["-" (subs t 1)])
+
+(defn- disambiguate-minus
+  "The tokenizing regex in eval greedily attaches a leading '-' to the
+  number that follows, which is correct for a unary negative (e.g. the
+  \"-4\" in \"3 + -4\") but wrong when the '-' is actually a binary
+  subtraction operator directly abutting the preceding operand with no
+  whitespace (e.g. \"10-4\"). Split those tokens back into a '-'
+  operator token and a positive number token."
+  [tokens]
+  (reduce (fn [acc t]
+            (if (and (seq acc)
+                     (operand-token? (peek acc))
+                     (negative-number-token? t))
+              (into acc (split-leading-minus t))
+              (conj acc t)))
+          []
+          tokens))
+
 (defn eval
   [input]
   (->> (re-seq #"-?0?\.\d+|-?\d+(?:\.\d+)?|[)(*+/-]" input)
+       disambiguate-minus
        nest-parens
        eval*))
