@@ -8,10 +8,33 @@
             [dgknght.app-lib.core :as lib]
             [dgknght.app-lib.forms :as forms]
             [dgknght.app-lib.forms-validation :as v]
-            [dgknght.app-lib.bootstrap-4 :as bs-4]
-            [dgknght.app-lib.bootstrap-icons :as icons]))
+            [dgknght.app-lib.bootstrap-4 :as bs-4]))
 
 (derive ::bootstrap-5 ::bs-4/bootstrap-4)
+
+(defn- apply-size
+  [attr {:keys [size]}]
+  (merge attr (case (or size :medium)
+                :large        {:width 40 :height 40}
+                :medium-large {:width 32 :height 32}
+                :medium       {:width 24 :height 24}
+                :small        {:width 16 :height 16})))
+
+(defn- icon*
+  [icon-id opts]
+  [:svg.bi (apply-size {:fill "currentColor"} opts)
+   [:use {:href (str "/images/bootstrap-icons.svg#"
+                     (name icon-id))}]])
+
+(defn icon
+  [icon-id & {:as opts}]
+  (icon* icon-id opts))
+
+(defn icon-with-text
+  [icon-id text & {:as opts}]
+  [:span.d-flex.align-items-center
+   (icon* icon-id opts)
+   [:span.ms-2 text]])
 
 (defmulti expand-nav-item
   #(cond
@@ -29,10 +52,10 @@
   {:id (keyword (->> (string/split path #"/")
                      (filter lib/presence)
                      (string/join "-")))
-   :label (->> (string/split path #"/")
-               (map title-case)
-               (filter lib/presence)
-               (string/join " "))
+   :infered-label (->> (string/split path #"/")
+                       (map title-case)
+                       (filter lib/presence)
+                       (string/join " "))
    :path path})
 
 (defmulti nav-item
@@ -46,7 +69,7 @@
   [:li [:hr.dropdown-divider {:role "separator"}]])
 
 (defmethod ^:private nav-item :dropdown
-  [{:keys [children id label active? tool-tip]}]
+  [{:keys [children id label infered-label active? tool-tip]}]
   (let [id (str "menu-item-" id)]
     ^{:key id}
     [:li.nav-item.dropdown
@@ -57,7 +80,7 @@
                                    :role :button
                                    :aria-expanded false
                                    :aria-haspopup true}
-      label]
+      (or label infered-label)]
      [:ul.dropdown-menu
       (->> children
            (map (comp nav-item
@@ -76,7 +99,18 @@
          ms))
 
 (defmethod ^:private nav-item :default
-  [{:keys [id label path tool-tip active? nav-fn badge-class badge toggle in-dropdown?]
+  [{:keys [id
+           label
+           infered-label
+           path
+           tool-tip
+           active?
+           nav-fn
+           badge-class
+           badge
+           toggle
+           in-dropdown?]
+    icn :icon
     :or {path "#"}}]
 
   ^{:key (str "menu-item-" id)}
@@ -90,7 +124,11 @@
       nav-fn (assoc :on-click nav-fn)
       active? (merge-attr {:class ["active"]
                           :aria-current "page"}))
-    (or label (title-case id))
+    (if icn
+      (if label
+        (icon-with-text icn label)
+        (icon icn))
+      (or label infered-label))
     (when badge
       [:span.badge.ms-1 {:class badge-class} badge])]])
 
@@ -104,8 +142,7 @@
                              :data-bs-target "#primaryNav"
                              :aria-controls "primaryNav"
                              :aria-expanded false
-                             :aria-label "Toggle Navigation"}
-     (icons/icon :list)]
+                             :aria-label "Toggle Navigation"}]
     (when (seq items)
       [:div#primaryNav.collapse.navbar-collapse
        [:ul.navbar-nav.me-auto.mb-2.mb-lg-0
@@ -124,8 +161,6 @@
        {:src profile-photo-url
         :style {:max-width "32px"}
         :alt "Profile Photo"}])]])
-
-(def ^{:deprecated "0.3.5"} icon icons/icon)
 
 (defn spinner
   ([] (spinner {}))
@@ -184,10 +219,9 @@
                :aria-atomic true}
    [:div.toast-header
     [:strong.me-auto title]
-    [:button.btn.text-secondary
+    [:button.btn.btn-close
      {:aria-label "Close"
-      :on-click #(notify/untoast id)}
-     (icons/icon :x)]]
+      :on-click #(notify/untoast id)}]]
    [:div.toast-body
     body]])
 
@@ -198,21 +232,11 @@
    {:class (str "alert-" (name severity))
     :role :alert}
    [:span.me-auto.flex-grow-1 message]
-   [:button.btn {:type :button
-                 :class (str "text-" (name severity))
-                 :on-click #(notify/unnotify a)
-                 :aria-label "Close"}
-    (icons/icon :x)]])
-
-(defn ^{:deprecated "0.3.5"} icon-with-text
-  ([icon-key text] (icon-with-text icon-key text {:size :small}))
-  ([icon-key text {:keys [size] :as options}]
-   [:span.d-flex.align-items-center
-    (if (= :spinner icon-key)
-      (spinner {:size size})
-      (icon icon-key options))
-    [:span.ms-1
-     text]]))
+   [:button.btn.btn-close
+    {:type :button
+     :class (str "text-" (name severity))
+     :on-click #(notify/unnotify a)
+     :aria-label "Close"}]])
 
 (defn ^{:deprecated "0.3.5"} busy-button
   [{:keys [html caption icon busy? disabled?]
@@ -231,7 +255,7 @@
          icon
          (if @busy?
            (spinner {:size :small})
-           (icons/icon icon {:size :small}))
+           (icon icon {:size :small}))
 
          :else
          (if @busy?
