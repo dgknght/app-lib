@@ -527,12 +527,14 @@
   field - a vector describing the location in the model where the value for this field is to be saved. (As in get-in)
   items - The items to be rendered in the list. Each item in the list is a tuple with the value in the 1st position and the label in the 2nd."
   [model field items {:keys [transform-fn
+                             disabled-fn
                              validations
                              on-change
                              errors
                              html]
                       :or {transform-fn identity
                            on-change identity
+                           disabled-fn (constantly false)
                            html {}}
                       :as options}]
   (v/add-rules model field validations)
@@ -543,6 +545,7 @@
                         {:id field
                          :name field
                          :value (or (get-in @model field) "")
+                         :disabled (disabled-fn)
                          :on-change (fn [e]
                                       (let [value (.-value (.-target e))]
                                         (swap! model
